@@ -1,0 +1,332 @@
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
+import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "@/services/supabase";
+
+export default function ConfirmEmailScreen() {
+  const router = useRouter();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const emailRedirectTo = Linking.createURL("auth/callback");
+
+  const handleResend = async () => {
+    if (!email) return;
+    setResending(true);
+    setResent(false);
+    try {
+      await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo },
+      });
+      setResent(true);
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <View style={styles.page}>
+      <View style={styles.card}>
+        {/* Icon */}
+        <View style={styles.iconWrap}>
+          <View style={styles.iconOuter}>
+            <View style={styles.iconInner}>
+              <Ionicons name="mail" size={36} color={"#111827"} />
+            </View>
+          </View>
+          <View style={styles.checkBadge}>
+            <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+          </View>
+        </View>
+
+        {/* Text */}
+        <View style={styles.textBlock}>
+          <Text style={styles.title}>Vérifiez votre boîte mail</Text>
+          <Text style={styles.desc}>
+            Nous avons envoyé un lien de confirmation à{"\n"}
+            <Text style={styles.emailHighlight}>{email ?? "votre adresse e-mail"}</Text>.
+          </Text>
+          <Text style={styles.hint}>
+            Cliquez sur le lien dans le mail pour activer votre compte, puis connectez-vous ici.
+          </Text>
+        </View>
+
+        {/* Steps */}
+        <View style={styles.stepsBlock}>
+          {STEPS.map((step, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Primary CTA */}
+        <Pressable
+          style={styles.primaryBtn}
+          onPress={() => router.replace("/establishment/login")}
+        >
+          <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
+          <Text style={styles.primaryBtnText}>Se connecter</Text>
+        </Pressable>
+
+        {/* Resend */}
+        <View style={styles.resendBlock}>
+          <Text style={styles.resendLabel}>Vous n'avez pas reçu le mail ?</Text>
+          {resent ? (
+            <View style={styles.resentRow}>
+              <Ionicons name="checkmark-circle" size={15} color={"#10B981"} />
+              <Text style={styles.resentText}>E-mail renvoyé avec succès</Text>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.resendBtn}
+              onPress={handleResend}
+              disabled={resending || !email}
+            >
+              {resending ? (
+                <ActivityIndicator size="small" color={"#111827"} />
+              ) : (
+                <Text style={styles.resendBtnText}>Renvoyer le lien de confirmation</Text>
+              )}
+            </Pressable>
+          )}
+        </View>
+
+        {/* Footer */}
+        <Pressable
+          style={styles.backLink}
+          onPress={() => router.replace("/establishment/offers")}
+        >
+          <Ionicons name="arrow-back" size={14} color={"#9CA3AF"} />
+          <Text style={styles.backLinkText}>Retour aux offres</Text>
+        </Pressable>
+      </View>
+
+      {/* Spam note */}
+      <Text style={styles.spamNote}>
+        Si vous ne trouvez pas le mail, vérifiez vos courriers indésirables.
+      </Text>
+    </View>
+  );
+}
+
+const STEPS = [
+  "Ouvrez votre boîte mail",
+  "Cliquez sur « Confirmer mon compte »",
+  "Revenez ici et connectez-vous",
+];
+
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    gap: 16,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 28,
+    gap: 24,
+    width: "100%",
+    maxWidth: 440,
+    alignItems: "center",
+    shadowColor: "#0B0B12",
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+
+  // Icon
+  iconWrap: {
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 100,
+    height: 100,
+  },
+  iconOuter: {
+    width: 96,
+    height: 96,
+    borderRadius: 999,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: "#DBEAFE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    backgroundColor: "#10B981",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+  },
+
+  // Text
+  textBlock: {
+    gap: 10,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#111827",
+    textAlign: "center",
+    letterSpacing: -0.5,
+  },
+  desc: {
+    fontSize: 15,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 23,
+  },
+  emailHighlight: {
+    color: "#111827",
+    fontWeight: "800",
+  },
+  hint: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  // Steps
+  stepsBlock: {
+    width: "100%",
+    gap: 10,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 18,
+    padding: 16,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  stepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  stepNumText: {
+    color: "#111827",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  stepText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+
+  // CTA
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#111827",
+    borderRadius: 14,
+    paddingVertical: 15,
+    width: "100%",
+    shadowColor: "#111827",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  primaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  // Resend
+  resendBlock: {
+    alignItems: "center",
+    gap: 8,
+  },
+  resendLabel: {
+    color: "#9CA3AF",
+    fontSize: 13,
+  },
+  resendBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F3F4F6",
+  },
+  resendBtnText: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  resentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  resentText: {
+    color: "#10B981",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  // Footer
+  backLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  backLinkText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  spamNote: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    textAlign: "center",
+    maxWidth: 340,
+  },
+});
