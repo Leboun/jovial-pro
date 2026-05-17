@@ -1,6 +1,8 @@
 {
   "rewrites": [
-    { "source": "/establishment/:path*", "destination": "/index.html" },
-    { "source": "/", "destination": "/index.html" }
+    {
+      "source": "/((?!assets|_expo|favicon\\.ico|metadata\\.json).*)",
+      "destination": "/index.html"
+    }
   ]
 }
