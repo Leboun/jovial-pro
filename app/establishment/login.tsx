@@ -146,7 +146,7 @@ export default function EstablishmentLoginScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.backBtn} onPress={() => router.push("/establishment/welcome")}>
+          <Pressable style={styles.backBtn} onPress={() => router.push("/establishment/offers")}>
             <Ionicons name="arrow-back" size={16} color={"#9CA3AF"} />
             <Text style={styles.backBtnText}>Accueil</Text>
           </Pressable>

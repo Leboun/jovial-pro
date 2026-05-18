@@ -119,18 +119,18 @@ export default function EstablishmentOffersScreen() {
     >
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.backBtn} onPress={() => router.push("/establishment/welcome")}>
+        <View style={styles.backBtn}>
           <View style={styles.logoMini}>
             <Text style={styles.logoMiniText}>J</Text>
           </View>
           <Text style={styles.brandLabel}>Jovial Pro</Text>
-        </Pressable>
+        </View>
         {session ? (
           <Pressable
             style={styles.topBarLink}
             onPress={async () => {
               await supabase.auth.signOut();
-              router.replace("/establishment/welcome");
+              router.replace("/establishment/offers");
             }}
           >
             <Ionicons name="log-out-outline" size={15} color={"#9CA3AF"} />
