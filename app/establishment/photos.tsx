@@ -397,14 +397,15 @@ const styles = StyleSheet.create({
   counterText: { color: "#111827", fontSize: 12, fontWeight: "800" },
   coverImage: {
     width: "100%",
-    aspectRatio: 16 / 7,
+    aspectRatio: 16 / 6,
+    maxHeight: 220,
     borderRadius: 20,
     backgroundColor: "#F3F4F6",
   },
   emptyState: { gap: 12, alignItems: "flex-start" },
   galleryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   galleryItem: {
-    width: 300,
+    width: 220,
     gap: 10,
     backgroundColor: "#F3F4F6",
     borderRadius: 20,
@@ -414,8 +415,8 @@ const styles = StyleSheet.create({
   },
   galleryImage: {
     width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: 16,
+    aspectRatio: 1,
+    borderRadius: 14,
     backgroundColor: "#FFFFFF",
   },
   galleryMeta: {
