@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f8faff",
     padding: 20,
   },
   noticeCard: {
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   noticeTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
   noticeText: { fontSize: 14, lineHeight: 20, color: "#9CA3AF" },
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 6,
   },
-  backLinkText: { color: "#111827", fontSize: 13, fontWeight: "700" },
+  backLinkText: { color: "#2B4E93", fontSize: 13, fontWeight: "700" },
   checkoutLayout: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   intervalCardActive: {
-    borderColor: "#111827",
+    borderColor: "#2B4E93",
     backgroundColor: "#F7F9FF",
   },
   intervalTitle: { color: "#111827", fontSize: 16, fontWeight: "800" },
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 999,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     marginTop: 6,
   },
   featureText: { flex: 1, color: "#111827", fontSize: 14, lineHeight: 21 },
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: "center",
-    backgroundColor: "#111111",
+    backgroundColor: "#2B4E93",
   },
   payButtonDisabled: {
     backgroundColor: "#D9DEE8",

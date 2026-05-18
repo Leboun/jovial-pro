@@ -317,7 +317,7 @@ export default function EstablishmentSignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#F8F9FA" },
+  flex: { flex: 1, backgroundColor: "#f8faff" },
   content: {
     padding: 24,
     paddingBottom: 52,
@@ -341,10 +341,10 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 13,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#111827",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   offerCardActive: {
-    borderColor: "#111827",
+    borderColor: "#2B4E93",
     backgroundColor: "#F3F4F6",
   },
   offerCardLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
@@ -463,12 +463,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  offerRadioActive: { borderColor: "#111827" },
+  offerRadioActive: { borderColor: "#2B4E93" },
   offerRadioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
   },
   offerCardText: { gap: 2, flex: 1 },
   offerCardName: { color: "#111827", fontSize: 15, fontFamily: Font.extraBold, includeFontPadding: false },
@@ -497,10 +497,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 16,
     paddingVertical: 17,
-    shadowColor: "#111827",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.3,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -517,5 +517,5 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   loginRowText: { color: "#9CA3AF", fontSize: 13, includeFontPadding: false },
-  loginRowLink: { color: "#111827", fontSize: 13, fontFamily: Font.bold, includeFontPadding: false },
+  loginRowLink: { color: "#2B4E93", fontSize: 13, fontFamily: Font.bold, includeFontPadding: false },
 });

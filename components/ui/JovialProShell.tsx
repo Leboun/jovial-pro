@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
   },
   backToAppBtnText: {
     color: "#FFFFFF",

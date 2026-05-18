@@ -1,10 +1,10 @@
 export const Pastel = {
   // Fonds
-  background: "#FDF6EC",
+  background: "#FFFFFF",
   surface: "#FFFFFF",
-  surfaceAlt: "#FBF3E4",
-  surfaceSoft: "#F7EDD8",
-  border: "#EAD9C0",
+  surfaceAlt: "#EEF2FF",
+  surfaceSoft: "#f8faff",
+  border: "#E5E7EB",
 
   // Textes
   text: "#242D41",
@@ -14,16 +14,16 @@ export const Pastel = {
   // Couleurs de marque Jovial
   primary: "#2B4E93",       // Bleu marine — nav, boutons principaux
   primarySoft: "#D6E0F5",   // Bleu marine doux — fonds, badges
-  orange: "#EF6731",        // Orange — CTA, accents forts
-  orangeSoft: "#FDEADE",    // Orange doux — fonds cartes
+  orange: "#F97316",        // Orange — CTA, accents forts
+  orangeSoft: "#FFF7ED",    // Orange doux — fonds cartes
   teal: "#5CB6AC",          // Turquoise — accents secondaires
   tealSoft: "#D8F0EE",      // Turquoise doux
-  cream: "#FFE8BF",         // Crème — fond hero, highlights
+  cream: "#DBEAFE",         // Bleu clair — texte sur fond primary
   night: "#242D41",         // Bleu nuit — texte sombre, headers
 
   // Sémantiques
-  accent: "#FFE8BF",
-  accentText: "#7A4A00",
+  accent: "#EEF2FF",
+  accentText: "#2B4E93",
   info: "#5CB6AC",
   infoSoft: "#D8F0EE",
   success: "#10B981",

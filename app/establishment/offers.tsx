@@ -273,7 +273,7 @@ export default function EstablishmentOffersScreen() {
               <View style={styles.featureList}>
                 {offer.features.map((f) => (
                   <View key={f} style={styles.featureRow}>
-                    <Ionicons name="checkmark-circle" size={15} color={offer.recommended ? "#111827" : "#10B981"} />
+                    <Ionicons name="checkmark-circle" size={15} color={offer.recommended ? "#2B4E93" : "#10B981"} />
                     <Text style={styles.featureText}>{f}</Text>
                   </View>
                 ))}
@@ -298,7 +298,7 @@ export default function EstablishmentOffersScreen() {
                 <Ionicons
                   name="arrow-forward"
                   size={14}
-                  color={offer.recommended || isCurrent ? "#FFFFFF" : "#111827"}
+                  color={offer.recommended || isCurrent ? "#FFFFFF" : "#2B4E93"}
                 />
               </View>
             </Pressable>
@@ -341,7 +341,7 @@ const REASSURANCE = [
 ];
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#F8F9FA" },
+  page: { flex: 1, backgroundColor: "#f8faff" },
   content: {
     padding: 20,
     paddingBottom: 56,
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f8faff",
   },
 
   // Top bar
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -450,8 +450,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   toggleBtnActive: {
-    backgroundColor: "#111827",
-    shadowColor: "#111827",
+    backgroundColor: "#2B4E93",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.2,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   cardRecommended: {
-    borderColor: "#111827",
+    borderColor: "#2B4E93",
     borderWidth: 2,
     backgroundColor: "#FAFCFF",
   },
@@ -520,13 +520,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 5,
     alignSelf: "flex-start",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#EEF2FF",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   recommendedBannerText: {
-    color: "#111827",
+    color: "#2B4E93",
     fontSize: 11,
     fontFamily: Font.extraBold,
     includeFontPadding: false,
@@ -620,9 +620,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   cardCtaRecommended: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
-    shadowColor: "#111827",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     borderColor: "#059669",
   },
   cardCtaText: {
-    color: "#111827",
+    color: "#2B4E93",
     fontSize: 14,
     fontFamily: Font.extraBold,
     includeFontPadding: false,

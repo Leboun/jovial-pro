@@ -278,7 +278,7 @@ export default function EstablishmentLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#F8F9FA" },
+  flex: { flex: 1, backgroundColor: "#f8faff" },
   content: {
     flexGrow: 1,
     padding: 24,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f8faff",
     gap: 12,
   },
   loadingText: { color: "#9CA3AF", fontSize: 13, includeFontPadding: false },
@@ -312,10 +312,10 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 13,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#111827",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     includeFontPadding: false,
   },
-  forgotLink: { color: "#111827", fontSize: 12, fontFamily: Font.bold, includeFontPadding: false },
+  forgotLink: { color: "#2B4E93", fontSize: 12, fontFamily: Font.bold, includeFontPadding: false },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -405,11 +405,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingVertical: 16,
     marginTop: 4,
-    shadowColor: "#111827",
+    shadowColor: "#2B4E93",
     shadowOpacity: 0.28,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
