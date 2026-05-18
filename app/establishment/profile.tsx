@@ -867,7 +867,7 @@ export default function EstablishmentProfileScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -1526,7 +1526,7 @@ const styles = StyleSheet.create({
   tagInputRow: { flexDirection: "row", gap: 10, flexWrap: "wrap", alignItems: "center" },
   tagInput: { flex: 1, minWidth: 220 },
   primaryButtonCompact: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1544,8 +1544,8 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   suggestionChipActive: {
-    backgroundColor: "#F3F4F6",
-    borderColor: "#111827",
+    backgroundColor: "#EEF2FF",
+    borderColor: "#2B4E93",
   },
   suggestionChipDisabled: { opacity: 0.45 },
   suggestionChipText: { color: "#111827", fontSize: 12, fontWeight: "700" },
@@ -1559,21 +1559,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   venueTypeChipActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
   },
   venueTypeChipTextActive: { color: "#FFFFFF" },
   venueTypeSelected: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#EEF2FF",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "#111827",
+    borderColor: "#2B4E93",
   },
   venueTypeSelectedText: {
     color: "#111827",
@@ -1606,8 +1606,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayTabActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
   },
   dayTabText: { color: "#111827", fontSize: 13, fontWeight: "800" },
   dayTabTextActive: { color: "#FFFFFF" },
@@ -1674,7 +1674,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     backgroundColor: "#F3F4F6",
   },
-  socialPlatformBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },
+  socialPlatformBtnActive: { backgroundColor: "#2B4E93", borderColor: "#2B4E93" },
   socialPlatformBtnText: { fontSize: 13, fontWeight: "600", color: "#9CA3AF" },
   socialPlatformBtnTextActive: { color: "#FFFFFF" },
   saveBanner: {
@@ -1692,7 +1692,7 @@ const styles = StyleSheet.create({
   saveBannerTextSuccess: { color: "#1a7a4a" },
   saveBannerTextError: { color: "#b91c1c" },
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,

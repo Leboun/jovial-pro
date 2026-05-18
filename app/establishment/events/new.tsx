@@ -243,7 +243,7 @@ export default function EstablishmentEventCreateScreen() {
   if (loading || gateRedirecting) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
         {gateRedirecting ? <Text style={styles.hint}>Redirection...</Text> : null}
       </View>
     );
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   primary: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",

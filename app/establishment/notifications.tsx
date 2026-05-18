@@ -94,7 +94,7 @@ export default function EstablishmentNotificationsScreen() {
     >
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color="#111827" />
+          <ActivityIndicator color="#2B4E93" />
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.center}>

@@ -251,7 +251,7 @@ export default function EstablishmentActivitiesScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -581,9 +581,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1,
   },
-  toggleOn: { backgroundColor: "#F3F4F6", borderColor: "#111827" },
+  toggleOn: { backgroundColor: "#EEF2FF", borderColor: "#2B4E93" },
   toggleOff: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-  toggleText: { color: "#111827", fontSize: 12, fontWeight: "800" },
+  toggleText: { color: "#2B4E93", fontSize: 12, fontWeight: "800" },
   formActions: { flexDirection: "row", gap: 8, alignItems: "center", marginTop: 4 },
   list: { gap: 14 },
   activityCard: {
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
   },
   deleteConfirmOkText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,

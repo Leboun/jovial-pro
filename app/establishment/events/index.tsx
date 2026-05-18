@@ -150,7 +150,7 @@ export default function EstablishmentEventsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -384,13 +384,13 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, color: "#9CA3AF" },
   error: { color: "#DC2626", fontSize: 12 },
   primary: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
   },
   primarySmall: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,

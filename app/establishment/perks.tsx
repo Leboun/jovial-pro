@@ -190,7 +190,7 @@ export default function EstablishmentPerksScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -444,9 +444,9 @@ const styles = StyleSheet.create({
   helperText: { color: "#9CA3AF", fontSize: 12, marginTop: -4 },
   toggleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   toggleButton: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
-  toggleOn: { backgroundColor: "#F3F4F6", borderColor: "#111827" },
+  toggleOn: { backgroundColor: "#EEF2FF", borderColor: "#2B4E93" },
   toggleOff: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-  toggleText: { color: "#111827", fontSize: 12, fontWeight: "800" },
+  toggleText: { color: "#2B4E93", fontSize: 12, fontWeight: "800" },
   formActions: { flexDirection: "row", gap: 8, alignItems: "center", marginTop: 4 },
   formErrorText: {
     color: "#DC2626",
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   historyBadgePending: { backgroundColor: "#F3F4F6" },
   historyBadgeText: { fontSize: 11, fontWeight: "700", color: "#111827" },
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,

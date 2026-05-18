@@ -42,8 +42,8 @@ export default function EstablishmentDashboard() {
             return;
           }
           const [events, sub, activitiesResult, reservationsResult] = await Promise.all([
-            listMyEvents(establishment.id),
-            getSubscription(establishment.id),
+            listMyEvents(establishment.id).catch(() => []),
+            getSubscription(establishment.id).catch(() => null),
             fetchVenueBookingActivities(establishment.id).catch(() => []),
             supabase
               .from("reservations")
@@ -76,8 +76,8 @@ export default function EstablishmentDashboard() {
       const establishment = await getBackOfficeEstablishment(userId);
       if (!establishment) { setProfile(null); return; }
       const [events, sub, activitiesResult, reservationsResult] = await Promise.all([
-        listMyEvents(establishment.id),
-        getSubscription(establishment.id),
+        listMyEvents(establishment.id).catch(() => []),
+        getSubscription(establishment.id).catch(() => null),
         fetchVenueBookingActivities(establishment.id).catch(() => []),
         supabase
           .from("reservations")
@@ -132,7 +132,7 @@ export default function EstablishmentDashboard() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={Pastel.primary} />
       </View>
     );
   }

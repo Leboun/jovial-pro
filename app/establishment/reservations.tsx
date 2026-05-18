@@ -164,7 +164,7 @@ export default function EstablishmentReservationsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  tabChipActive: { backgroundColor: "#111827", borderColor: "#111827" },
+  tabChipActive: { backgroundColor: "#2B4E93", borderColor: "#2B4E93" },
   tabText: { color: "#111827", fontSize: 13, fontWeight: "700" },
   tabTextActive: { color: "#FFFFFF" },
   emptyCard: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   actionBtns: { flexDirection: "row", gap: 10, marginTop: 4 },
   confirmBtn: {
     flex: 1, alignItems: "center", paddingVertical: 10,
-    borderRadius: 12, backgroundColor: "#111827",
+    borderRadius: 12, backgroundColor: "#2B4E93",
   },
   confirmBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   cancelBtn: {
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: "#EF4444", fontSize: 13, fontWeight: "700" },
 
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,

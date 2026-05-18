@@ -113,7 +113,7 @@ export default function EstablishmentSubscriptionScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -245,12 +245,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f8faff",
     padding: 20,
   },
-  title: { fontSize: 22, fontFamily: Font.bold, color: "#111827", includeFontPadding: false },
+  title: { fontSize: 22, fontFamily: Font.bold, color: "#242D41", includeFontPadding: false },
   button: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   offerCardRecommended: {
-    borderColor: "#111827",
+    borderColor: "#2B4E93",
     backgroundColor: "#F8FBFF",
   },
   offerCardCurrent: {
@@ -332,13 +332,13 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 999,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     marginTop: 6,
   },
-  featureText: { color: "#111827", fontSize: 14, lineHeight: 20, flex: 1, includeFontPadding: false },
+  featureText: { color: "#242D41", fontSize: 14, lineHeight: 20, flex: 1, includeFontPadding: false },
   cardFooter: {
     borderRadius: 16,
-    backgroundColor: "#111111",
+    backgroundColor: "#2B4E93",
     paddingVertical: 14,
     alignItems: "center",
   },

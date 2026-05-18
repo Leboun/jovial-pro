@@ -208,7 +208,7 @@ export default function EstablishmentPhotosScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
+        <ActivityIndicator color={"#2B4E93"} />
       </View>
     );
   }
@@ -436,8 +436,8 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   previewBadgeActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
   },
   previewBadgeText: { color: "#111827", fontSize: 11, fontWeight: "800" },
   previewBadgeTextActive: { color: "#FFFFFF" },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   iconButtonDisabled: { opacity: 0.45 },
   primaryButton: {
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
