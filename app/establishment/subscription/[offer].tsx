@@ -127,7 +127,11 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
       } catch { /* non-bloquant */ } finally {
         setSubmitting(false);
       }
-      router.replace("/establishment/dashboard");
+      Alert.alert(
+        "Étape 4 — Paiement",
+        `Ton offre ${selectedOffer.name} a bien été sélectionnée.\n\nLe module de paiement Stripe sera activé prochainement. En attendant, ton espace partenaire est accessible.`,
+        [{ text: "Accéder au dashboard", onPress: () => router.replace("/establishment/dashboard") }]
+      );
       return;
     }
 
