@@ -121,10 +121,13 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
       return;
     }
     if (!intervalPrice?.stripe_price_id) {
-      Alert.alert(
-        "Paiement bientôt disponible",
-        "Le module de paiement Stripe sera activé prochainement. Ton compte établissement est créé et ton offre sera activée dès l'ouverture du paiement."
-      );
+      try {
+        setSubmitting(true);
+        await ensureStubEstablishmentForPro(userId);
+      } catch { /* non-bloquant */ } finally {
+        setSubmitting(false);
+      }
+      router.replace("/establishment/dashboard");
       return;
     }
 
