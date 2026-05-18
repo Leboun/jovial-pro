@@ -111,13 +111,20 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
   }, [intervalPrice, selectedInterval, selectedOffer]);
 
   const isCurrent = currentOfferKey === offerKey;
-  const canCheckout = !!userId && !!intervalPrice?.stripe_price_id && !isCurrent;
+  const canCheckout = !!userId && !isCurrent;
   const checkoutPath = offerKey ? `/establishment/subscription/${offerKey}?interval=${selectedInterval}` : "/establishment/offers";
   const nextBackOfficePath = "/establishment/dashboard";
 
   const handleCheckout = async () => {
-    if (!userId || !selectedOffer || !offerKey || !intervalPrice?.stripe_price_id) {
+    if (!userId || !selectedOffer || !offerKey) {
       Alert.alert("Indisponible", "Connecte-toi d'abord pour finaliser cette souscription.");
+      return;
+    }
+    if (!intervalPrice?.stripe_price_id) {
+      Alert.alert(
+        "Paiement bientôt disponible",
+        "Le module de paiement Stripe sera activé prochainement. Ton compte établissement est créé et ton offre sera activée dès l'ouverture du paiement."
+      );
       return;
     }
 
@@ -225,28 +232,15 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
             </View>
           </View>
 
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Coordonnées</Text>
-            {userId ? (
-              <>
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoLabel}>E-mail</Text>
-                  <Text style={styles.infoValue}>{session?.user?.email ?? "Email indisponible"}</Text>
-                </View>
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoLabel}>Établissement</Text>
-                  <Text style={styles.infoValue}>
-                    {establishment?.name ?? "Il sera créé automatiquement à la validation"}
-                  </Text>
-                </View>
-              </>
-            ) : (
+          {!userId ? (
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Coordonnées</Text>
               <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Compte partenaire</Text>
                 <Text style={styles.infoValue}>Création du compte à l'étape suivante</Text>
               </View>
-            )}
-          </View>
+            </View>
+          ) : null}
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Principales fonctionnalités</Text>
@@ -355,15 +349,11 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
                       {isCurrent ? "Offre déjà active" : submitting ? "Ouverture..." : "Procéder au paiement"}
                     </Text>
                   </Pressable>
-                  {!canCheckout && !isCurrent ? (
-                    <Text style={styles.summaryHint}>
-                      Le paiement automatique n'est pas encore disponible pour cette offre.
-                    </Text>
-                  ) : (
-                    <Text style={styles.summaryHint}>
-                      Tu seras redirigé vers une page de paiement sécurisée pour finaliser la souscription.
-                    </Text>
-                  )}
+                  <Text style={styles.summaryHint}>
+                    {intervalPrice?.stripe_price_id
+                      ? "Tu seras redirigé vers une page de paiement sécurisée pour finaliser la souscription."
+                      : "Le paiement Stripe sera activé prochainement. Tu peux déjà valider ton choix d'offre."}
+                  </Text>
                 </>
               )}
             </>
