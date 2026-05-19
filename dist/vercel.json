@@ -1,1 +1,1 @@
-{"rewrites":[{"source":"/((?!assets|_expo|favicon\\.ico|metadata\\.json).*)","destination":"/index.html"}]}
+{"rewrites":[{"source":"/((?!_expo|assets|favicon.png|metadata.json).*)","destination":"/index.html"}]}
