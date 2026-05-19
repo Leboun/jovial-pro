@@ -226,10 +226,10 @@ export default function VenueScreen() {
         .from("venue_favorites")
         .select("venue_id", { count: "exact", head: true })
         .eq("user_id", userId);
-      if ((count ?? 0) >= 4) {
+      if ((count ?? 0) >= 2) {
         Alert.alert(
           "Limite atteinte",
-          "Tu as atteint la limite de 4 favoris. Passe à Jovial+ pour en ajouter autant que tu veux !",
+          "Tu as atteint la limite de 2 favoris. Passe à Jovial+ pour en ajouter autant que tu veux !",
           [
             { text: "Plus tard", style: "cancel" },
             { text: "Découvrir Jovial+", onPress: () => router.push("/premium" as any) },

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
@@ -273,8 +274,33 @@ export default function MapTabContentNative() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [spotlightVenueId, setSpotlightVenueId] = useState<number | null>(null);
+  const [bannerVisible, setBannerVisible] = useState(false);
+
+  const SUGGEST_BANNER_KEY = "suggest_banner_dismissed_at";
+  const SUGGEST_EMAIL = "hello@getjovial.fr";
+  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+  useEffect(() => {
+    AsyncStorage.getItem(SUGGEST_BANNER_KEY).then((val) => {
+      if (!val) { setBannerVisible(true); return; }
+      if (Date.now() - Number(val) > ONE_WEEK_MS) setBannerVisible(true);
+    });
+  }, []);
+
+  const dismissBanner = () => {
+    AsyncStorage.setItem(SUGGEST_BANNER_KEY, String(Date.now())).catch(() => {});
+    setBannerVisible(false);
+  };
+
+  const openSuggestForm = async () => {
+    const subject = encodeURIComponent("Proposition de lieu — Jovial");
+    const body = encodeURIComponent("Bonjour,\n\nJe souhaite proposer le lieu suivant :\n\nNom :\nAdresse :\nVille :\nContact :\n\nMerci !");
+    const url = `mailto:${SUGGEST_EMAIL}?subject=${subject}&body=${body}`;
+    Linking.openURL(url).catch(() => {});
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -423,7 +449,7 @@ export default function MapTabContentNative() {
   }, [userCoords, venues]);
 
   useEffect(() => {
-    if (sortedVenues.length === 0) { setSelectedVenue(null); return; }
+    if (sortedVenues.length === 0) { setSelectedVenue(null); setPreviewVisible(false); return; }
     setSelectedVenue((prev) => {
       if (prev && sortedVenues.some((v) => v.id === prev.id)) {
         return sortedVenues.find((v) => v.id === prev.id) ?? sortedVenues[0];
@@ -471,7 +497,7 @@ export default function MapTabContentNative() {
             isActive={selectedVenue?.id === venue.id}
             isFavorite={favoriteIds.has(String(venue.id))}
             isSpotlight={spotlightVenueId === Number(venue.id)}
-            onPress={() => setSelectedVenue(venue)}
+            onPress={() => { setSelectedVenue(venue); setPreviewVisible(true); }}
           />
         ))}
       </MapView>
@@ -482,6 +508,9 @@ export default function MapTabContentNative() {
             <Ionicons name="locate" size={18} color="#FFFFFF" />
           </Pressable>
         ) : null}
+        <Pressable style={styles.recenterButton} onPress={openSuggestForm} hitSlop={6}>
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+        </Pressable>
       </View>
 
       {errorMsg ? (
@@ -497,7 +526,22 @@ export default function MapTabContentNative() {
         </View>
       ) : null}
 
-      {selectedVenue ? (
+      {bannerVisible && !previewVisible ? (
+        <View style={styles.suggestBanner}>
+          <View style={styles.suggestBannerContent}>
+            <Text style={styles.suggestBannerTitle}>📍 Ton bar n'est pas sur la carte ?</Text>
+            <Text style={styles.suggestBannerSub}>Propose-le et gagne 3 mois Premium offerts</Text>
+          </View>
+          <Pressable style={styles.suggestBannerBtn} onPress={openSuggestForm}>
+            <Text style={styles.suggestBannerBtnText}>Proposer</Text>
+          </Pressable>
+          <Pressable style={styles.suggestBannerClose} onPress={dismissBanner} hitSlop={10}>
+            <Ionicons name="close" size={16} color="#6B7280" />
+          </Pressable>
+        </View>
+      ) : null}
+
+      {selectedVenue && previewVisible ? (
         <View pointerEvents="box-none" style={[styles.previewOverlay, screenWidth < 420 && styles.previewOverlaySmall]}>
           <MapVenuePreviewCard
             venue={{
@@ -514,7 +558,7 @@ export default function MapTabContentNative() {
               nextEvent: selectedVenue.nextEvent ?? null,
             }}
             onPress={() => router.push({ pathname: "/venue/[id]", params: { id: selectedVenue.id } })}
-            onClose={() => setSelectedVenue(null)}
+            onClose={() => setPreviewVisible(false)}
             isFavorite={favoriteIds.has(String(selectedVenue.id))}
             onToggleFavorite={() => toggleFavorite(String(selectedVenue.id))}
           />
@@ -610,5 +654,55 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     bottom: 16,
+  },
+  suggestBanner: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#EAD9C0",
+  },
+  suggestBannerContent: {
+    flex: 1,
+    gap: 2,
+  },
+  suggestBannerTitle: {
+    fontSize: 13,
+    fontFamily: Font.bold,
+    color: "#242D41",
+    includeFontPadding: false,
+  },
+  suggestBannerSub: {
+    fontSize: 11,
+    fontFamily: Font.regular,
+    color: "#6B7280",
+    includeFontPadding: false,
+  },
+  suggestBannerBtn: {
+    backgroundColor: "#EF6731",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  suggestBannerBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontFamily: Font.bold,
+    includeFontPadding: false,
+  },
+  suggestBannerClose: {
+    padding: 4,
   },
 });

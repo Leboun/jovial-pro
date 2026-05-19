@@ -142,12 +142,6 @@ export default function TabsLayout() {
             <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
-        listeners={{
-          tabPress: (event) => {
-            event.preventDefault();
-            router.replace("/(tabs)/groups");
-          },
-        }}
       />
 
       <Tabs.Screen
@@ -170,6 +164,11 @@ export default function TabsLayout() {
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            navigation.navigate("profile", { screen: "index" });
+          },
+        })}
       />
 
       {/* Onglets template masqués */}

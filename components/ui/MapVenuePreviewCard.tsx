@@ -171,8 +171,8 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
               </ScrollView>
             ) : null}
             {venue.nextEvent ? (
-              <Text style={styles.nextEventText} numberOfLines={1}>
-                {truncateEventLine(formatEventDateShort(venue.nextEvent.date), venue.nextEvent.title)}
+              <Text style={styles.nextEventText} numberOfLines={1} ellipsizeMode="tail">
+                {`📅 ${formatEventDateShort(venue.nextEvent.date)} · ${venue.nextEvent.title}`}
               </Text>
             ) : null}
           </View>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 26,
     overflow: "hidden",
   },
-  photoWrapSmall: { height: 80 },
+  photoWrapSmall: { height: 100 },
   photo: {
     width: "100%",
     height: "100%",

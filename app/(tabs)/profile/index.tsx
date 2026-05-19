@@ -696,14 +696,19 @@ export default function ProfileScreen() {
     >
       {/* ── HERO ── */}
       <View style={[styles.heroSection, { paddingTop: insets.top + 16 }]}>
-        <Pressable style={[styles.chatTopBtn, { top: insets.top + 10 }]} onPress={handleOpenChat} hitSlop={10}>
-          <Ionicons name="chatbubbles-outline" size={24} color={Pastel.text} />
-          {unreadMessages > 0 ? (
-            <View style={styles.chatBadge}>
-              <Text style={styles.chatBadgeText}>{unreadMessages > 99 ? "99+" : unreadMessages}</Text>
-            </View>
-          ) : null}
-        </Pressable>
+        <View style={[styles.topRightBtns, { top: insets.top + 10 }]}>
+          <Pressable style={styles.topIconBtn} onPress={() => router.push("/profile/notification-settings" as any)} hitSlop={10}>
+            <Ionicons name="notifications-outline" size={24} color={Pastel.text} />
+          </Pressable>
+          <Pressable style={styles.topIconBtn} onPress={handleOpenChat} hitSlop={10}>
+            <Ionicons name="chatbubbles-outline" size={24} color={Pastel.text} />
+            {unreadMessages > 0 ? (
+              <View style={styles.chatBadge}>
+                <Text style={styles.chatBadgeText}>{unreadMessages > 99 ? "99+" : unreadMessages}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
         <Pressable style={styles.avatarWrap} onPress={() => setEditingProfile(true)}>
           {profile?.avatar_url && !avatarLoadFailed ? (
             <Image
@@ -745,9 +750,6 @@ export default function ProfileScreen() {
           <Pressable style={styles.heroPrimaryBtn} onPress={() => setEditingProfile(true)}>
             <Ionicons name="create-outline" size={15} color="#FFFFFF" />
             <Text style={styles.heroPrimaryBtnText}>Modifier le profil</Text>
-          </Pressable>
-          <Pressable style={styles.heroIconBtn} onPress={handleSuggestVenue}>
-            <Ionicons name="beer-outline" size={18} color={Pastel.text} />
           </Pressable>
         </View>
       </View>
@@ -995,14 +997,6 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={16} color={Pastel.textMuted} />
         </Pressable>
 
-        <Pressable style={styles.settingsRow} onPress={() => router.push("/profile/notification-settings" as any)}>
-          <View style={[styles.settingsIcon, { backgroundColor: "#FFF7ED" }]}>
-            <Ionicons name="notifications-outline" size={18} color="#F59E0B" />
-          </View>
-          <Text style={styles.settingsRowText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={16} color={Pastel.textMuted} />
-        </Pressable>
-
         <Pressable style={styles.settingsRow} onPress={() => openLegalLink("Politique de confidentialité", "https://jovial.app/confidentialite")}>
           <View style={[styles.settingsIcon, { backgroundColor: "#F5F3FF" }]}>
             <Ionicons name="shield-checkmark-outline" size={18} color="#8B5CF6" />
@@ -1016,6 +1010,17 @@ export default function ProfileScreen() {
             <Ionicons name="document-text-outline" size={18} color={Pastel.textMuted} />
           </View>
           <Text style={styles.settingsRowText}>Mentions légales</Text>
+          <Ionicons name="chevron-forward" size={16} color={Pastel.textMuted} />
+        </Pressable>
+
+        <Pressable style={styles.settingsRow} onPress={handleSuggestVenue}>
+          <View style={[styles.settingsIcon, { backgroundColor: "#FFF7ED" }]}>
+            <Ionicons name="storefront-outline" size={18} color={Pastel.orange} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingsRowText}>Proposer un établissement</Text>
+            <Text style={{ fontSize: 11, color: Pastel.textMuted, fontFamily: Font.regular }}>Gagne 3 mois Premium offerts 🎁</Text>
+          </View>
           <Ionicons name="chevron-forward" size={16} color={Pastel.textMuted} />
         </Pressable>
 
@@ -1054,9 +1059,13 @@ const styles = StyleSheet.create({
     backgroundColor: Pastel.background,
   },
 
-  chatTopBtn: {
+  topRightBtns: {
     position: "absolute",
-    right: 16,
+    right: 12,
+    flexDirection: "row",
+    gap: 4,
+  },
+  topIconBtn: {
     padding: 8,
   },
   chatBadge: {

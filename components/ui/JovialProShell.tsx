@@ -203,7 +203,12 @@ export default function JovialProShell({
 
   if (!showNavigation) {
     return (
-      <View style={styles.page}>
+      <ScrollView
+        style={styles.page}
+        contentContainerStyle={styles.standaloneContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#111827" /> : undefined}
+      >
         <View style={styles.mainPaneStandalone}>
           <View style={styles.headerRow}>
             <View style={styles.headerTextBlock}>
@@ -212,16 +217,9 @@ export default function JovialProShell({
             </View>
             {rightSlot ? <View style={styles.rightSlot}>{rightSlot}</View> : null}
           </View>
-          <ScrollView
-            style={styles.contentScroll}
-            contentContainerStyle={styles.contentInner}
-            showsVerticalScrollIndicator={false}
-            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#111827" /> : undefined}
-          >
-            {children}
-          </ScrollView>
+          {children}
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -288,11 +286,14 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
   mainPaneStandalone: {
-    flex: 1,
     padding: 20,
     maxWidth: 960,
     width: "100%",
     alignSelf: "center",
+  },
+  standaloneContent: {
+    flexGrow: 1,
+    paddingBottom: 48,
   },
   navCard: {
     backgroundColor: Pastel.surface,

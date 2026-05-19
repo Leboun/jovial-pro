@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Linking,
   Platform,
@@ -26,6 +27,7 @@ import { getOpeningStatus, type OpeningHours } from "../../utils/openingHours";
 import { getExploreCache, setExploreCache } from "@/services/exploreCache";
 import ExploreBoostBanner from "@/components/ExploreBoostBanner";
 import { Pastel } from "@/constants/pastel";
+import { useIsPremium } from "@/hooks/useIsPremium";
 import { Font } from "@/constants/typography";
 
 type VenueRow = {
@@ -139,12 +141,12 @@ const intentTabs: IntentTab[] = [
   {
     key: "events",
     label: "Événements",
-    iconSource: require("../../assets/images/événements.png"),
+    iconSource: require("../../assets/images/evenements.png"),
   },
   {
     key: "activities",
     label: "Activités",
-    iconSource: require("../../assets/images/Activités.png"),
+    iconSource: require("../../assets/images/activites.png"),
   },
 ];
 
@@ -862,6 +864,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+  const { isPremium: userIsPremium } = useIsPremium();
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [query, setQuery] = useState("");
   const [appliedQuery, setAppliedQuery] = useState("");
@@ -874,6 +877,7 @@ export default function ExploreScreen() {
   );
   const [cityQuery, setCityQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedVenueName, setSelectedVenueName] = useState<string | null>(null);
   const [selectedRadiusKm, setSelectedRadiusKm] = useState<number | null>(10);
   const [activeIntent, setActiveIntent] = useState<IntentKey>("activities");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -1122,12 +1126,18 @@ export default function ExploreScreen() {
     const cityValue = cityQuery.trim();
     if (cityValue) {
       const normalized = normalizeSearchValue(cityValue);
-      const match = cityOptions.find(
-        (city) => normalizeSearchValue(city) === normalized
-      );
-      setSelectedCity(match ?? cityValue);
+      const venueNameMatch = venues.find((v) => normalizeSearchValue(v.name) === normalized);
+      if (venueNameMatch) {
+        setSelectedVenueName(venueNameMatch.name);
+        setSelectedCity(null);
+      } else {
+        const cityMatch = cityOptions.find((city) => normalizeSearchValue(city) === normalized);
+        setSelectedCity(cityMatch ?? cityValue);
+        setSelectedVenueName(null);
+      }
     } else {
       setSelectedCity(null);
+      setSelectedVenueName(null);
     }
     setCityQuery("");
   };
@@ -1146,6 +1156,23 @@ export default function ExploreScreen() {
   const toggleFavorite = async (venueId: number) => {
     if (!userId) return;
     const isFav = favoriteIds.has(venueId);
+    if (!isFav && !userIsPremium) {
+      const { count } = await supabase
+        .from("venue_favorites")
+        .select("venue_id", { count: "exact", head: true })
+        .eq("user_id", userId);
+      if ((count ?? 0) >= 2) {
+        Alert.alert(
+          "Limite atteinte",
+          "Tu as atteint la limite de 2 favoris. Passe à Jovial+ pour en ajouter autant que tu veux !",
+          [
+            { text: "Plus tard", style: "cancel" },
+            { text: "Découvrir Jovial+", onPress: () => router.push("/premium" as any) },
+          ]
+        );
+        return;
+      }
+    }
     setFavoriteIds((prev) => {
       const next = new Set(prev);
       isFav ? next.delete(venueId) : next.add(venueId);
@@ -1431,6 +1458,16 @@ export default function ExploreScreen() {
     return cityOptions.filter((city) => normalizeSearchValue(city).includes(term));
   }, [cityOptions, cityQuery]);
 
+  const filteredVenueNameOptions = useMemo(() => {
+    const term = normalizeSearchValue(cityQuery.trim());
+    if (!term) return [];
+    return venues
+      .filter((v) => normalizeSearchValue(v.name).includes(term))
+      .map((v) => v.name)
+      .filter((name, i, arr) => arr.indexOf(name) === i)
+      .slice(0, 5);
+  }, [venues, cityQuery]);
+
   const activityFilters = useMemo(() => {
     const base = [
       ...games.map((game) => game.name),
@@ -1474,7 +1511,9 @@ export default function ExploreScreen() {
 
   const filteredVenues = useMemo(() => {
     return venues.filter((venue) => {
-      if (selectedCity && selectedCity !== "Autour de moi") {
+      if (selectedVenueName) {
+        if (!normalizeSearchValue(venue.name).includes(normalizeSearchValue(selectedVenueName))) return false;
+      } else if (selectedCity && selectedCity !== "Autour de moi") {
         const term = normalizeSearchValue(selectedCity);
         const cityValue = normalizeSearchValue(venue.city ?? "");
         if (cityHasMatches) {
@@ -2025,19 +2064,20 @@ export default function ExploreScreen() {
                     <TextInput
                       value={cityQuery}
                       onChangeText={setCityQuery}
-                      placeholder="Rechercher une ville"
+                      placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
                       selectionColor="#1D4ED8"
                       cursorColor="#1D4ED8"
                       style={styles.searchModalInputCompact}
                       onPressIn={(event) => event.stopPropagation()}
                     />
-                    {cityQuery.length > 0 || selectedCity ? (
+                    {cityQuery.length > 0 || selectedCity || selectedVenueName ? (
                       <Pressable
                         onPress={(event) => {
                           event.stopPropagation();
                           setCityQuery("");
                           setSelectedCity(null);
+                          setSelectedVenueName(null);
                         }}
                         hitSlop={8}
                       >
@@ -2048,23 +2088,31 @@ export default function ExploreScreen() {
                 </View>
               </View>
               {activeVenuePanel !== "location" ? null : cityQuery.length > 0 ? (
-                filteredCityOptions.length > 0 ? (
+                (filteredCityOptions.length > 0 || filteredVenueNameOptions.length > 0) ? (
                   <View style={styles.searchModalCityList}>
-                    {filteredCityOptions.slice(0, 8).map((city) => (
+                    {filteredCityOptions.slice(0, 5).map((city) => (
                       <Pressable
                         key={`venue-city-option-${city}`}
                         style={styles.searchModalCityRow}
-                        onPress={(event) => {
-                          event.stopPropagation();
-                          setCityQuery(city);
-                        }}
+                        onPress={(event) => { event.stopPropagation(); setCityQuery(city); }}
                       >
+                        <Ionicons name="location-outline" size={14} color={Pastel.textMuted} />
                         <Text style={styles.searchModalCityText}>{city}</Text>
+                      </Pressable>
+                    ))}
+                    {filteredVenueNameOptions.map((name) => (
+                      <Pressable
+                        key={`venue-name-option-${name}`}
+                        style={styles.searchModalCityRow}
+                        onPress={(event) => { event.stopPropagation(); setCityQuery(name); }}
+                      >
+                        <Ionicons name="storefront-outline" size={14} color={Pastel.primary} />
+                        <Text style={[styles.searchModalCityText, { color: Pastel.primary }]}>{name}</Text>
                       </Pressable>
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.searchModalMuted}>Aucune ville trouvée.</Text>
+                  <Text style={styles.searchModalMuted}>Aucun résultat.</Text>
                 )
               ) : null}
             </Pressable>
@@ -2254,19 +2302,20 @@ export default function ExploreScreen() {
                     <TextInput
                       value={cityQuery}
                       onChangeText={setCityQuery}
-                      placeholder="Rechercher une ville"
+                      placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
                       selectionColor="#1D4ED8"
                       cursorColor="#1D4ED8"
                       style={styles.searchModalInputCompact}
                       onPressIn={(event) => event.stopPropagation()}
                     />
-                    {cityQuery.length > 0 || selectedCity ? (
+                    {cityQuery.length > 0 || selectedCity || selectedVenueName ? (
                       <Pressable
                         onPress={(event) => {
                           event.stopPropagation();
                           setCityQuery("");
                           setSelectedCity(null);
+                          setSelectedVenueName(null);
                         }}
                         hitSlop={8}
                       >
@@ -2277,23 +2326,31 @@ export default function ExploreScreen() {
                 </View>
               </View>
               {activeActivityPanel !== "location" ? null : cityQuery.length > 0 ? (
-                filteredCityOptions.length > 0 ? (
+                (filteredCityOptions.length > 0 || filteredVenueNameOptions.length > 0) ? (
                   <View style={styles.searchModalCityList}>
-                    {filteredCityOptions.slice(0, 8).map((city) => (
+                    {filteredCityOptions.slice(0, 5).map((city) => (
                       <Pressable
                         key={`activity-city-option-${city}`}
                         style={styles.searchModalCityRow}
-                        onPress={(event) => {
-                          event.stopPropagation();
-                          setCityQuery(city);
-                        }}
+                        onPress={(event) => { event.stopPropagation(); setCityQuery(city); }}
                       >
+                        <Ionicons name="location-outline" size={14} color={Pastel.textMuted} />
                         <Text style={styles.searchModalCityText}>{city}</Text>
+                      </Pressable>
+                    ))}
+                    {filteredVenueNameOptions.map((name) => (
+                      <Pressable
+                        key={`activity-venue-name-${name}`}
+                        style={styles.searchModalCityRow}
+                        onPress={(event) => { event.stopPropagation(); setCityQuery(name); }}
+                      >
+                        <Ionicons name="storefront-outline" size={14} color={Pastel.primary} />
+                        <Text style={[styles.searchModalCityText, { color: Pastel.primary }]}>{name}</Text>
                       </Pressable>
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.searchModalMuted}>Aucune ville trouvée.</Text>
+                  <Text style={styles.searchModalMuted}>Aucun résultat.</Text>
                 )
               ) : null}
             </Pressable>
@@ -2416,7 +2473,7 @@ export default function ExploreScreen() {
                     <TextInput
                       value={cityQuery}
                       onChangeText={setCityQuery}
-                      placeholder="Rechercher une ville"
+                      placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
                       selectionColor="#1D4ED8"
                       cursorColor="#1D4ED8"

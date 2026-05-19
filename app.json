@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.jovial.app",
+      "bundleIdentifier": "fr.getjovial.app",
       "supportsTablet": false,
       "buildNumber": "1",
       "infoPlist": {
@@ -21,7 +21,8 @@
         "NSLocationWhenInUseUsageDescription": "Jovial utilise ta position pour afficher les bars et événements près de chez toi.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jovial utilise ta position pour afficher les bars et événements près de chez toi.",
         "UIStatusBarHidden": false,
-        "UIViewControllerBasedStatusBarAppearance": true
+        "UIViewControllerBasedStatusBarAppearance": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -48,8 +49,20 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
-      ],
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/logo_jovial.png"
@@ -101,6 +114,12 @@
         "projectId": "ca2d76f1-ce9a-4dfb-b5b4-d14f0a3ec7fe"
       }
     },
-    "owner": "banban22"
+    "owner": "banban22",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ca2d76f1-ce9a-4dfb-b5b4-d14f0a3ec7fe"
+    }
   }
 }

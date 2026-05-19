@@ -102,7 +102,7 @@ export default function EstablishmentSignupScreen() {
         } else if (msg.includes("password")) {
           setErrors({ global: "Mot de passe trop faible. Utilisez au moins 8 caractères." });
         } else {
-          setErrors({ global: "Une erreur est survenue. Vérifiez vos informations et réessayez." });
+          setErrors({ global: `Erreur: ${error.message}` });
         }
         return;
       }

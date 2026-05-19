@@ -27,7 +27,7 @@ const FEATURES: { label: string; basic: string | boolean; plus: string | boolean
   { label: "Réservation d'activités", basic: true, plus: true },
   { label: "Accès à l'agenda des événements", basic: true, plus: true },
   { label: "Accès et création de club", basic: true, plus: true },
-  { label: "Ajout de bars / lieux favoris", basic: "4 max", plus: "Illimité" },
+  { label: "Ajout de bars / lieux favoris", basic: "2 max", plus: "Illimité" },
   { label: "Offres privilèges dans les établissements", basic: false, plus: true },
   { label: "Accès à l'agenda des copains", basic: false, plus: true },
   { label: "Carte des bars favoris des amis", basic: false, plus: true },
