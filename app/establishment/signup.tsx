@@ -102,14 +102,19 @@ export default function EstablishmentSignupScreen() {
         } else if (msg.includes("password")) {
           setErrors({ global: "Mot de passe trop faible. Utilisez au moins 8 caractères." });
         } else {
-          setErrors({ global: `Erreur: ${error.message}` });
+          setErrors({ global: "Une erreur est survenue. Vérifiez vos informations et réessayez." });
         }
         return;
       }
 
       router.replace({
         pathname: "/establishment/confirm-email",
-        params: { email: email.trim().toLowerCase() },
+        params: {
+          email: email.trim().toLowerCase(),
+          offer: selectedOffer,
+          interval: interval ?? "year",
+          next: nextPath,
+        },
       });
     } finally {
       setLoading(false);

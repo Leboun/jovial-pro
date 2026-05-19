@@ -14,13 +14,23 @@ import { Font } from "@/constants/typography";
 
 export default function ConfirmEmailScreen() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, offer, interval, next } = useLocalSearchParams<{
+    email?: string;
+    offer?: string;
+    interval?: string;
+    next?: string;
+  }>();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const emailRedirectTo = Linking.createURL("auth/callback");
 
+  const nextPath = typeof next === "string" && next.startsWith("/establishment/")
+    ? next
+    : "/establishment/dashboard";
+
   const handleResend = async () => {
-    if (!email) return;
+    if (!email || resendCooldown > 0) return;
     setResending(true);
     setResent(false);
     try {
@@ -30,9 +40,23 @@ export default function ConfirmEmailScreen() {
         options: { emailRedirectTo },
       });
       setResent(true);
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown((v) => {
+          if (v <= 1) { clearInterval(timer); return 0; }
+          return v - 1;
+        });
+      }, 1000);
     } finally {
       setResending(false);
     }
+  };
+
+  const handleLogin = () => {
+    router.replace({
+      pathname: "/establishment/login",
+      params: { next: nextPath },
+    });
   };
 
   return (
@@ -88,7 +112,7 @@ export default function ConfirmEmailScreen() {
         {/* Primary CTA */}
         <Pressable
           style={styles.primaryBtn}
-          onPress={() => router.replace("/establishment/login")}
+          onPress={handleLogin}
         >
           <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
           <Text style={styles.primaryBtnText}>Se connecter</Text>
@@ -100,18 +124,20 @@ export default function ConfirmEmailScreen() {
           {resent ? (
             <View style={styles.resentRow}>
               <Ionicons name="checkmark-circle" size={15} color={"#10B981"} />
-              <Text style={styles.resentText}>E-mail renvoyé avec succès</Text>
+              <Text style={styles.resentText}>E-mail renvoyé{resendCooldown > 0 ? ` — attendre ${resendCooldown}s` : ""}</Text>
             </View>
           ) : (
             <Pressable
-              style={styles.resendBtn}
+              style={[styles.resendBtn, (resending || resendCooldown > 0 || !email) ? styles.resendBtnDisabled : null]}
               onPress={handleResend}
-              disabled={resending || !email}
+              disabled={resending || resendCooldown > 0 || !email}
             >
               {resending ? (
                 <ActivityIndicator size="small" color={"#2B4E93"} />
               ) : (
-                <Text style={styles.resendBtnText}>Renvoyer le lien de confirmation</Text>
+                <Text style={styles.resendBtnText}>
+                  {resendCooldown > 0 ? `Renvoyer dans ${resendCooldown}s` : "Renvoyer le lien de confirmation"}
+                </Text>
               )}
             </Pressable>
           )}
@@ -123,7 +149,7 @@ export default function ConfirmEmailScreen() {
           onPress={() => router.replace("/establishment/offers")}
         >
           <Ionicons name="arrow-back" size={14} color={"#9CA3AF"} />
-          <Text style={styles.backLinkText}>Retour aux offres</Text>
+          <Text style={styles.backLinkText}>Modifier l'offre</Text>
         </Pressable>
       </View>
 
@@ -335,6 +361,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     backgroundColor: "#F3F4F6",
   },
+  resendBtnDisabled: { opacity: 0.5 },
   resendBtnText: {
     color: "#111827",
     fontSize: 13,
