@@ -45,7 +45,7 @@ export default function EstablishmentLoginScreen() {
       const role = await getProfileRole(userId);
       if (role === "user") {
         await supabase.auth.signOut();
-        setError("Ce compte est un compte utilisateur. Utilisez un compte partenaire.");
+        setError("E-mail ou mot de passe incorrect. Vérifiez vos identifiants.");
         return false;
       }
       return true;

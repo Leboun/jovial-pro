@@ -905,7 +905,7 @@ export default function EstablishmentProfileScreen() {
     <JovialProShell
       currentPath={pathname}
       title="Ma fiche"
-      navVariant={ficheComplete ? "full" : "profile-only"}
+      navVariant="full"
       subtitle="Renseigne les informations essentielles de ton etablissement. Les photos, activites et evenements sont geres dans leurs onglets dedies."
       rightSlot={
         <View style={styles.progressCard}>

@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 
 import { supabase } from "@/services/supabase";
 import { getProfileRole } from "@/services/profiles";
+import { getBackOfficeEstablishment, getSubscription } from "@/services/establishment";
 
 type Status = "loading" | "error" | "success";
 
@@ -64,7 +65,19 @@ export default function AuthCallbackScreen() {
         if (!cancelled) {
           setStatus("success");
           setMessage("Compte confirmé. Redirection...");
-          router.replace(role === "establishment" ? "/establishment/dashboard" : "/(tabs)/map");
+          if (role === "establishment") {
+            const establishment = await getBackOfficeEstablishment(userId);
+            const sub = establishment ? await getSubscription(establishment.id).catch(() => null) : null;
+            if (!sub || sub.status !== "active") {
+              const { data: userData } = await supabase.auth.getUser();
+              const requestedOffer = userData.user?.user_metadata?.requested_offer ?? "rayonnement";
+              router.replace(`/establishment/subscription/${requestedOffer}` as any);
+            } else {
+              router.replace("/establishment/dashboard");
+            }
+          } else {
+            router.replace("/(tabs)/map");
+          }
         }
       } catch (err: any) {
         if (!cancelled) {

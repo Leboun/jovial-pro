@@ -7,7 +7,6 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/services/supabase";
 import { Font } from "@/constants/typography";
@@ -23,7 +22,7 @@ export default function ConfirmEmailScreen() {
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const emailRedirectTo = Linking.createURL("auth/callback");
+  const emailRedirectTo = "https://pro.getjovial.fr/auth/callback";
 
   const nextPath = typeof next === "string" && next.startsWith("/establishment/")
     ? next

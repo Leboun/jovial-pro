@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 
 import { JOVIAL_PRO_OFFERS, JovialProOfferKey } from "@/constants/jovialPro";
@@ -35,7 +34,7 @@ export default function EstablishmentSignupScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const emailRedirectTo = Linking.createURL("auth/callback");
+  const emailRedirectTo = "https://pro.getjovial.fr/auth/callback";
   const defaultNextPath = "/establishment/dashboard";
   const nextPath =
     typeof next === "string" && next.startsWith("/establishment/")
@@ -102,7 +101,7 @@ export default function EstablishmentSignupScreen() {
         } else if (msg.includes("password")) {
           setErrors({ global: "Mot de passe trop faible. Utilisez au moins 8 caractères." });
         } else {
-          setErrors({ global: "Une erreur est survenue. Vérifiez vos informations et réessayez." });
+          setErrors({ global: "Une erreur est survenue. Réessayez ou contactez le support." });
         }
         return;
       }

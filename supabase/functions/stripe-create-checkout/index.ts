@@ -92,7 +92,7 @@ serve(async (req) => {
           venue_id: venueId,
           stripe_customer_id: customerId,
           status: "past_due",
-          plan: "classic",
+          plan: "visibilite",
         },
         { onConflict: "venue_id" }
       );
