@@ -52,11 +52,25 @@ const resolveStorage = async () => {
   return cachedStorage;
 };
 
+const SessionStorageAdapter: StorageAdapter = {
+  getItem: (key: string) => Promise.resolve(sessionStorage.getItem(key)),
+  setItem: (key: string, value: string) => { sessionStorage.setItem(key, value); return Promise.resolve(); },
+  removeItem: (key: string) => { sessionStorage.removeItem(key); return Promise.resolve(); },
+};
+
 const SupabaseStorage = {
-  getItem: (key: string) => resolveStorage().then((storage) => storage.getItem(key)),
+  getItem: (key: string) =>
+    Platform.OS === "web"
+      ? SessionStorageAdapter.getItem(key)
+      : resolveStorage().then((storage) => storage.getItem(key)),
   setItem: (key: string, value: string) =>
-    resolveStorage().then((storage) => storage.setItem(key, value)),
-  removeItem: (key: string) => resolveStorage().then((storage) => storage.removeItem(key)),
+    Platform.OS === "web"
+      ? SessionStorageAdapter.setItem(key, value)
+      : resolveStorage().then((storage) => storage.setItem(key, value)),
+  removeItem: (key: string) =>
+    Platform.OS === "web"
+      ? SessionStorageAdapter.removeItem(key)
+      : resolveStorage().then((storage) => storage.removeItem(key)),
 };
 
 export const supabase = createClient(
