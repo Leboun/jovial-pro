@@ -52,6 +52,12 @@ export default function EstablishmentDashboard() {
               .gte("starts_at", new Date().toISOString()),
           ]);
           if (!cancelled) {
+            if (!sub || sub.status !== "active") {
+              const { data: userData } = await supabase.auth.getUser();
+              const requestedOffer = userData.user?.user_metadata?.requested_offer ?? "rayonnement";
+              router.replace(`/establishment/subscription/${requestedOffer}` as any);
+              return;
+            }
             setProfile(establishment);
             setEventsCount(events.length);
             setActivitiesCount(activitiesResult.length);
