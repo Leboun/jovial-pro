@@ -155,7 +155,11 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
       if (!result?.url) {
         throw new Error("Checkout URL missing");
       }
-      await Linking.openURL(result.url);
+      if (typeof window !== "undefined") {
+        window.location.href = result.url;
+      } else {
+        await Linking.openURL(result.url);
+      }
     } catch {
       Alert.alert("Erreur", "Impossible d'ouvrir la page de paiement pour le moment.");
     } finally {
