@@ -45,7 +45,7 @@ export default function EstablishmentLoginScreen() {
       const role = await getProfileRole(userId);
       if (role === "user") {
         await supabase.auth.signOut();
-        setError("E-mail ou mot de passe incorrect. Vérifiez vos identifiants.");
+        setError("E-mail ou mot de passe incorrect.");
         return false;
       }
       return true;
@@ -91,7 +91,7 @@ export default function EstablishmentLoginScreen() {
     setSubmitting(false);
 
     if (authError) {
-      setError("E-mail ou mot de passe incorrect. Vérifiez vos identifiants.");
+      setError("E-mail ou mot de passe incorrect.");
       return;
     }
 
