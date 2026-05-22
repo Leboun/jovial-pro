@@ -25,12 +25,22 @@ async function resolvePlanCode(
   priceId: string | null
 ) {
   if (!priceId) return null;
+
+  // Check subscription_plans (monthly price)
   const { data: plan } = await supabaseAdmin
     .from("subscription_plans")
     .select("code")
     .eq("stripe_price_id", priceId)
     .maybeSingle();
-  return plan?.code ?? null;
+  if (plan?.code) return plan.code;
+
+  // Check subscription_plan_prices (annual or alternate prices)
+  const { data: planPrice } = await supabaseAdmin
+    .from("subscription_plan_prices")
+    .select("plan_id, subscription_plans(code)")
+    .eq("stripe_price_id", priceId)
+    .maybeSingle();
+  return (planPrice?.subscription_plans as any)?.code ?? null;
 }
 
 async function syncSubscription(
@@ -51,7 +61,7 @@ async function syncSubscription(
   const planCode =
     metadata.plan_code ||
     (await resolvePlanCode(supabaseAdmin, priceId)) ||
-    "classic";
+    "visibilite";
 
   const mappedStatus = statusMap[subscription.status] ?? "past_due";
   const currentPeriodEndAt = subscription.current_period_end
@@ -89,7 +99,7 @@ serve(async (req) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(payload, signature, stripeWebhookSecret);
+    event = await stripe.webhooks.constructEventAsync(payload, signature, stripeWebhookSecret);
   } catch (err) {
     console.error("Stripe webhook signature error", err);
     return new Response("Invalid signature", { status: 400 });

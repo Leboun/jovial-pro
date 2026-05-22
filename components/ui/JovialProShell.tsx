@@ -70,6 +70,7 @@ export default function JovialProShell({
   const userId = session?.user?.id ?? null;
   const [newNotifCount, setNewNotifCount] = useState(0);
   const [planCode, setPlanCode] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
@@ -90,8 +91,11 @@ export default function JovialProShell({
         if (!cancelled) {
           setPlanCode(sub?.plan ?? null);
           setNewNotifCount(countResult.count ?? 0);
+          setSubLoading(false);
         }
-      } catch { /* silent */ }
+      } catch {
+        if (!cancelled) setSubLoading(false);
+      }
     };
     load();
     return () => { cancelled = true; };
@@ -99,6 +103,7 @@ export default function JovialProShell({
 
   const isLocked = (item: NavItem) => {
     if (!item.minPlan) return false;
+    if (subLoading) return false;
     if (planCode === "pro") return false;
     if (planCode === "rayonnement" && item.minPlan === "rayonnement") return false;
     return true;
