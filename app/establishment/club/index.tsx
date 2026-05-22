@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import JovialProShell from "@/components/ui/JovialProShell";
 import { useAuth } from "@/providers/AuthProvider";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 import {
   approvePost,
   Club,
@@ -27,10 +28,6 @@ import {
   listPendingPosts,
   togglePinPost,
 } from "@/services/club";
-import {
-  getBackOfficeEstablishment,
-  getSubscription,
-} from "@/services/establishment";
 import { subscriptionHasFeature } from "@/utils/planFeatureGate";
 
 export default function ClubJovialScreen() {
@@ -38,10 +35,11 @@ export default function ClubJovialScreen() {
   const pathname = usePathname();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+  const { venue, subscription, loading: estLoading } = useEstablishment();
 
   const [loading, setLoading] = useState(true);
-  const [venueId, setVenueId] = useState<number | null>(null);
-  const [hasAccess, setHasAccess] = useState(false);
+  const venueId = venue?.id ?? null;
+  const hasAccess = subscriptionHasFeature(subscription, "hasClubJovial");
   const [club, setClub] = useState<Club | null>(null);
   const [posts, setPosts] = useState<ClubPost[]>([]);
   const [pendingPosts, setPendingPosts] = useState<ClubPost[]>([]);
@@ -55,19 +53,11 @@ export default function ClubJovialScreen() {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!venue) return;
     setLoading(true);
     setError(null);
     try {
-      const venue = await getBackOfficeEstablishment(userId);
-      if (!venue) return;
-      setVenueId(venue.id);
-
-      const sub = await getSubscription(venue.id);
-      const access = subscriptionHasFeature(sub, "hasClubJovial");
-      setHasAccess(access);
-
-      if (access) {
+      if (hasAccess) {
         const fetchedClub = await getClubByVenue(venue.id);
         setClub(fetchedClub);
         if (fetchedClub) {
@@ -86,7 +76,7 @@ export default function ClubJovialScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [venue, hasAccess]);
 
   useEffect(() => {
     load();
@@ -172,7 +162,7 @@ export default function ClubJovialScreen() {
   }
 
   // ── Mur d'upgrade : offre Visibilité ────────────────────────────────────────
-  if (!hasAccess && !loading) {
+  if (!hasAccess && !loading && !estLoading) {
     return (
       <JovialProShell
         currentPath={pathname}

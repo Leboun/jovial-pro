@@ -18,14 +18,13 @@ import JovialProShell from "@/components/ui/JovialProShell";
 import { isEstablishmentPreviewEnabled } from "@/constants/establishmentPreview";
 import { getOfferByKey, resolveOfferKey, type JovialProOfferKey } from "@/constants/jovialPro";
 import { useAuth } from "@/providers/AuthProvider";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 import { searchPlaces, type PlaceResult } from "@/services/places";
 import { supabase } from "@/services/supabase";
 import {
   EstablishmentSubscription,
   EstablishmentProfile,
-  getBackOfficeEstablishment,
   ensureStubEstablishmentForPro,
-  getSubscription,
   updateMyEstablishment,
 } from "@/services/establishment";
 import { isEstablishmentFicheComplete } from "@/utils/establishmentFiche";
@@ -298,6 +297,7 @@ export default function EstablishmentProfileScreen() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
   const previewMode = isEstablishmentPreviewEnabled(userId);
+  const { venue: ctxVenue, subscription: ctxSubscription, loading: estLoading } = useEstablishment();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -436,12 +436,13 @@ export default function EstablishmentProfileScreen() {
 
   useEffect(() => {
     if (!userId) return;
+    if (estLoading) return;
 
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
-        let establishment = await getBackOfficeEstablishment(userId);
+        let establishment: EstablishmentProfile | null = ctxVenue ?? null;
         if (!establishment && previewMode) {
           establishment = await ensureStubEstablishmentForPro(userId);
         }
@@ -453,18 +454,11 @@ export default function EstablishmentProfileScreen() {
           hydrateProfileForm(establishment);
         }
 
-        let sub: EstablishmentSubscription | null = null;
-        try {
-          sub = await getSubscription(establishment.id);
-        } catch {
-          sub = null;
-        }
-
         // Le check d'abonnement est suspendu jusqu'à l'intégration Stripe complète.
         // Les utilisateurs établissement accèdent librement à leur fiche.
 
         if (!cancelled) {
-          setSubscription(sub);
+          setSubscription(ctxSubscription ?? null);
         }
       } catch {
         if (!cancelled) setProfile(null);
@@ -478,16 +472,15 @@ export default function EstablishmentProfileScreen() {
     return () => {
       cancelled = true;
     };
-  }, [previewMode, router, userId]);
+  }, [previewMode, userId, ctxVenue, ctxSubscription, estLoading]);
 
   const handleInitializeProfile = async () => {
     if (!userId) return;
 
     setLoading(true);
     try {
-      const establishment =
-        (await getBackOfficeEstablishment(userId)) ??
-        (previewMode ? await ensureStubEstablishmentForPro(userId) : null);
+      const establishment: EstablishmentProfile | null =
+        ctxVenue ?? (previewMode ? await ensureStubEstablishmentForPro(userId) : null);
 
       if (!establishment) {
         Alert.alert("Initialisation impossible", "La fiche n'a pas pu etre preparee pour le moment.");
@@ -495,13 +488,7 @@ export default function EstablishmentProfileScreen() {
       }
 
       hydrateProfileForm(establishment);
-
-      try {
-        const sub = await getSubscription(establishment.id);
-        setSubscription(sub);
-      } catch {
-        setSubscription(null);
-      }
+      setSubscription(ctxSubscription ?? null);
     } catch {
       Alert.alert("Initialisation impossible", "La fiche n'a pas pu etre preparee pour le moment.");
     } finally {

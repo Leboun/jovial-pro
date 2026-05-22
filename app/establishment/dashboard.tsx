@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -9,8 +9,9 @@ import {
   getOfferByKey,
 } from "@/constants/jovialPro";
 import { useAuth } from "@/providers/AuthProvider";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 import { fetchVenueBookingActivities } from "@/services/bookings";
-import { getBackOfficeEstablishment, getSubscription, listMyEvents } from "@/services/establishment";
+import { listMyEvents } from "@/services/establishment";
 import { supabase } from "@/services/supabase";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
@@ -20,104 +21,92 @@ export default function EstablishmentDashboard() {
   const pathname = usePathname();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+  const { venue, subscription, loading: estLoading, refresh: refreshEstablishment } = useEstablishment();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const [eventsCount, setEventsCount] = useState(0);
   const [activitiesCount, setActivitiesCount] = useState(0);
   const [reservationsCount, setReservationsCount] = useState(0);
-  const [subscription, setSubscription] = useState<any>(null);
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) return;
+      if (!venue) return;
+      if (subscription && subscription.status !== "active") {
+        supabase.auth.getUser().then(({ data: userData }) => {
+          const requestedOffer = userData.user?.user_metadata?.requested_offer ?? "rayonnement";
+          router.replace(`/establishment/subscription/${requestedOffer}` as any);
+        });
+        return;
+      }
       let cancelled = false;
       const load = async () => {
         setLoading(true);
         try {
-          const establishment = await getBackOfficeEstablishment(userId);
-          if (!establishment) {
-            if (!cancelled) setProfile(null);
-            return;
-          }
-          const [events, sub, activitiesResult, reservationsResult] = await Promise.all([
-            listMyEvents(establishment.id).catch(() => []),
-            getSubscription(establishment.id).catch(() => null),
-            fetchVenueBookingActivities(establishment.id).catch(() => []),
+          const [events, activitiesResult, reservationsResult] = await Promise.all([
+            listMyEvents(venue.id).catch(() => []),
+            fetchVenueBookingActivities(venue.id).catch(() => []),
             supabase
               .from("reservations")
               .select("id", { count: "exact", head: true })
-              .eq("venue_id", establishment.id)
+              .eq("venue_id", venue.id)
               .gte("starts_at", new Date().toISOString()),
           ]);
           if (!cancelled) {
-            if (!sub || sub.status !== "active") {
-              const { data: userData } = await supabase.auth.getUser();
-              const requestedOffer = userData.user?.user_metadata?.requested_offer ?? "rayonnement";
-              router.replace(`/establishment/subscription/${requestedOffer}` as any);
-              return;
-            }
-            setProfile(establishment);
             setEventsCount(events.length);
             setActivitiesCount(activitiesResult.length);
             setReservationsCount(reservationsResult.count ?? 0);
-            setSubscription(sub);
           }
         } catch {
-          if (!cancelled) setProfile(null);
+          // silently ignore
         } finally {
           if (!cancelled) setLoading(false);
         }
       };
       load();
       return () => { cancelled = true; };
-    }, [userId])
+    }, [venue, subscription, router])
   );
 
   const handleRefresh = useCallback(async () => {
-    if (!userId) return;
+    if (!venue) return;
     setRefreshing(true);
     try {
-      const establishment = await getBackOfficeEstablishment(userId);
-      if (!establishment) { setProfile(null); return; }
-      const [events, sub, activitiesResult, reservationsResult] = await Promise.all([
-        listMyEvents(establishment.id).catch(() => []),
-        getSubscription(establishment.id).catch(() => null),
-        fetchVenueBookingActivities(establishment.id).catch(() => []),
+      await refreshEstablishment();
+      const [events, activitiesResult, reservationsResult] = await Promise.all([
+        listMyEvents(venue.id).catch(() => []),
+        fetchVenueBookingActivities(venue.id).catch(() => []),
         supabase
           .from("reservations")
           .select("id", { count: "exact", head: true })
-          .eq("venue_id", establishment.id)
+          .eq("venue_id", venue.id)
           .gte("starts_at", new Date().toISOString()),
       ]);
-      setProfile(establishment);
       setEventsCount(events.length);
       setActivitiesCount(activitiesResult.length);
       setReservationsCount(reservationsResult.count ?? 0);
-      setSubscription(sub);
     } catch {
       // silently ignore
     } finally {
       setRefreshing(false);
     }
-  }, [userId]);
+  }, [venue, refreshEstablishment]);
 
   const completion = useMemo(() => {
-    if (!profile) return 0;
+    if (!venue) return 0;
     const fields = [
-      profile.name,
-      profile.city,
-      profile.address,
-      profile.description,
-      profile.cover_url,
-      profile.instagram_url,
-      profile.website_url,
-      profile.phone,
+      venue.name,
+      venue.city,
+      venue.address,
+      venue.description,
+      venue.cover_url,
+      venue.instagram_url,
+      venue.website_url,
+      venue.phone,
     ];
     const filled = fields.filter((value) => Boolean(String(value ?? "").trim())).length;
     return Math.round((filled / fields.length) * 100);
-  }, [profile]);
+  }, [venue]);
 
   const currentOffer = useMemo(() => {
     if (!subscription || subscription.status !== "active") return null;
@@ -135,7 +124,7 @@ export default function EstablishmentDashboard() {
     );
   }
 
-  if (!profile && !loading) {
+  if (!venue && !estLoading) {
     return (
       <JovialProShell
         currentPath={pathname}
@@ -159,7 +148,7 @@ export default function EstablishmentDashboard() {
     <JovialProShell
       currentPath={pathname}
       title="Dashboard"
-      subtitle={`Bonjour ${profile?.name ?? "partenaire"}, voici les points prioritaires de ton espace.`}
+      subtitle={`Bonjour ${venue?.name ?? "partenaire"}, voici les points prioritaires de ton espace.`}
       onRefresh={handleRefresh}
       refreshing={refreshing}
       loading={loading}

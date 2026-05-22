@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import JovialProShell from "@/components/ui/JovialProShell";
 import { useAuth } from "@/providers/AuthProvider";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 import {
   deleteVenueBookingActivity,
   fetchGamesCatalog,
@@ -16,7 +17,6 @@ import {
   VenueBookingActivity,
 } from "@/services/bookings";
 import { ensureEstablishmentFeatureAccess } from "@/utils/establishmentProGate";
-import { getSubscription } from "@/services/establishment";
 import { getPlanCapabilities } from "@/utils/planFeatureGate";
 
 export default function EstablishmentActivitiesScreen() {
@@ -24,6 +24,7 @@ export default function EstablishmentActivitiesScreen() {
   const pathname = usePathname();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+  const { venue, subscription } = useEstablishment();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,7 +47,7 @@ export default function EstablishmentActivitiesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) return;
+      if (!userId || !venue) return;
       let cancelled = false;
       const load = async () => {
         setLoading(true);
@@ -56,9 +57,9 @@ export default function EstablishmentActivitiesScreen() {
             if (!cancelled) { setActivities([]); setGames([]); setEstablishmentId(null); }
             return;
           }
-          const [rows, allGames, sub] = await Promise.all([fetchVenueBookingActivities(gate.venueId), fetchGamesCatalog(), getSubscription(gate.venueId)]);
+          const [rows, allGames] = await Promise.all([fetchVenueBookingActivities(gate.venueId), fetchGamesCatalog()]);
           const cleanRows = rows.filter((a): a is VenueBookingActivity => a != null);
-          const caps = getPlanCapabilities(sub?.plan);
+          const caps = getPlanCapabilities(subscription?.plan);
           if (!cancelled) { setActivities(cleanRows); setGames(allGames); setEstablishmentId(gate.venueId); setTagsLimit(caps?.tagsLimit ?? 3); }
         } catch {
           if (!cancelled) { setActivities([]); setGames([]); setEstablishmentId(null); }
@@ -68,24 +69,24 @@ export default function EstablishmentActivitiesScreen() {
       };
       load();
       return () => { cancelled = true; };
-    }, [router, userId])
+    }, [router, userId, venue, subscription])
   );
 
   const handleRefresh = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !venue) return;
     setRefreshing(true);
     try {
       const gate = await ensureEstablishmentFeatureAccess({ userId, replace: (href) => router.replace(href as never) });
       if (!gate.ok || !gate.venueId) return;
-      const [rows, allGames, sub] = await Promise.all([fetchVenueBookingActivities(gate.venueId), fetchGamesCatalog(), getSubscription(gate.venueId)]);
+      const [rows, allGames] = await Promise.all([fetchVenueBookingActivities(gate.venueId), fetchGamesCatalog()]);
       setActivities(rows.filter((a): a is VenueBookingActivity => a != null));
       setGames(allGames);
       setEstablishmentId(gate.venueId);
-      setTagsLimit(getPlanCapabilities(sub?.plan)?.tagsLimit ?? 3);
+      setTagsLimit(getPlanCapabilities(subscription?.plan)?.tagsLimit ?? 3);
     } catch { /* ignore */ } finally {
       setRefreshing(false);
     }
-  }, [router, userId]);
+  }, [router, userId, venue, subscription]);
 
   const bookingEnabledCount = useMemo(
     () => activities.filter((activity) => activity.booking_enabled).length,

@@ -9,8 +9,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 
-import { useAuth } from "@/providers/AuthProvider";
-import { getBackOfficeEstablishment, getSubscription } from "@/services/establishment";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 import {
   bookCarouselDate,
   bookExploreDate,
@@ -77,15 +76,14 @@ type Confirm =
   | { type: "cancel"; dateStr: string; bookingId: number; tab: "explore" | "carousel" };
 
 export default function BoostsScreen() {
-  const { session } = useAuth();
   const router = useRouter();
-  const userId = session?.user?.id ?? null;
+  const { venue, subscription } = useEstablishment();
 
   const [loading, setLoading] = useState(true);
-  const [venueId, setVenueId] = useState<number | null>(null);
-  const [venueLat, setVenueLat] = useState<number | null>(null);
-  const [venueLng, setVenueLng] = useState<number | null>(null);
-  const [caps, setCaps] = useState<ReturnType<typeof getPlanCapabilities>>(null);
+  const venueId = venue?.id ?? null;
+  const venueLat = venue?.lat ?? null;
+  const venueLng = venue?.lng ?? null;
+  const caps = getPlanCapabilities(subscription?.plan);
 
   const [tab, setTab] = useState<"explore" | "carousel">("explore");
   const today = new Date();
@@ -101,19 +99,10 @@ export default function BoostsScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!venue) return;
+    if (!subscription || subscription.status !== "active") { router.replace("/establishment/offers"); return; }
     setLoading(true);
     try {
-      const venue = await getBackOfficeEstablishment(userId);
-      if (!venue) { router.replace("/establishment/offers"); return; }
-      const sub = await getSubscription(venue.id);
-      if (!sub || sub.status !== "active") { router.replace("/establishment/offers"); return; }
-
-      setVenueId(venue.id);
-      setVenueLat(venue.lat ?? null);
-      setVenueLng(venue.lng ?? null);
-      setCaps(getPlanCapabilities(sub.plan));
-
       if (venue.lat && venue.lng) {
         const [unavail, , myExp, myCar] = await Promise.all([
           getExploreUnavailableDates(venue.lat, venue.lng, venue.id),
@@ -128,7 +117,7 @@ export default function BoostsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [venue, subscription, router]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
