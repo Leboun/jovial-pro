@@ -26,6 +26,8 @@ import {
   EstablishmentSubscription,
   EstablishmentProfile,
   ensureStubEstablishmentForPro,
+  getBackOfficeEstablishment,
+  getSubscription,
   updateMyEstablishment,
 } from "@/services/establishment";
 import { isEstablishmentFicheComplete } from "@/utils/establishmentFiche";
@@ -442,20 +444,19 @@ export default function EstablishmentProfileScreen() {
       const load = async () => {
         setLoading(true);
         try {
-          await refreshEstablishment();
-          const establishment: EstablishmentProfile | null = ctxVenue ?? null;
+          // Lire directement depuis Supabase pour avoir les données fraîches
+          let establishment: EstablishmentProfile | null = await getBackOfficeEstablishment(userId);
           if (!establishment && previewMode) {
-            const stub = await ensureStubEstablishmentForPro(userId);
-            if (!cancelled && stub) hydrateProfileForm(stub);
-            return;
+            establishment = await ensureStubEstablishmentForPro(userId);
           }
           if (!establishment) {
             if (!cancelled) setProfile(null);
             return;
           }
+          const sub = await getSubscription(establishment.id).catch(() => null);
           if (!cancelled) {
             hydrateProfileForm(establishment);
-            setSubscription(ctxSubscription ?? null);
+            setSubscription(sub);
           }
         } catch {
           if (!cancelled) setProfile(null);
