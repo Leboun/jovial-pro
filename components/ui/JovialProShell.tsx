@@ -16,8 +16,7 @@ import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
 import { supabase } from "@/services/supabase";
 import { useAuth } from "@/providers/AuthProvider";
-import { ensureEstablishmentFeatureAccess } from "@/utils/establishmentProGate";
-import { getSubscription } from "@/services/establishment";
+import { useEstablishment } from "@/providers/EstablishmentProvider";
 
 type NavItem = {
   href: string;
@@ -72,37 +71,23 @@ export default function JovialProShell({
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
   const [newNotifCount, setNewNotifCount] = useState(0);
-  const [planCode, setPlanCode] = useState<string | null>(null);
-  const [subLoading, setSubLoading] = useState(true);
+  const { subscription, venue, loading: subLoading } = useEstablishment();
+  const planCode = subscription?.plan ?? null;
 
   useEffect(() => {
-    if (!userId) return;
+    if (!venue?.id) return;
     let cancelled = false;
-    const load = async () => {
-      try {
-        const gate = await ensureEstablishmentFeatureAccess({ userId, replace: () => {} });
-        if (!gate.ok || !gate.venueId) return;
-        const [sub, countResult] = await Promise.all([
-          getSubscription(gate.venueId),
-          supabase
-            .from("reservations")
-            .select("id", { count: "exact", head: true })
-            .eq("venue_id", gate.venueId)
-            .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-            .neq("status", "cancelled"),
-        ]);
-        if (!cancelled) {
-          setPlanCode(sub?.plan ?? null);
-          setNewNotifCount(countResult.count ?? 0);
-          setSubLoading(false);
-        }
-      } catch {
-        if (!cancelled) setSubLoading(false);
-      }
-    };
-    load();
+    supabase
+      .from("reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("venue_id", venue.id)
+      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .neq("status", "cancelled")
+      .then(({ count }) => {
+        if (!cancelled) setNewNotifCount(count ?? 0);
+      });
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [venue?.id]);
 
   const isLocked = (item: NavItem) => {
     if (!item.minPlan) return false;

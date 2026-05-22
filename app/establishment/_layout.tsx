@@ -2,6 +2,7 @@
 import { Platform } from "react-native";
 import { Stack, usePathname } from "expo-router";
 import { supabase } from "@/services/supabase";
+import { EstablishmentProvider } from "@/providers/EstablishmentProvider";
 
 export default function EstablishmentLayout() {
   const pathname = usePathname();
@@ -16,5 +17,9 @@ export default function EstablishmentLayout() {
     }
   }, [pathname]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <EstablishmentProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </EstablishmentProvider>
+  );
 }
