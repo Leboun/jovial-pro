@@ -802,9 +802,15 @@ const getVenuePhotos = (venue: ExploreVenue) => {
 };
 
 const mapVenue = (row: VenueRow): ExploreVenue => {
-  const activities = Array.isArray(row.activities)
-    ? row.activities.filter((a): a is string => typeof a === "string" && a.trim().length > 0)
-    : [];
+  // Prefer venue_games (source of truth) over the potentially stale venues.activities column
+  const venueGamesNames = (row.venue_games ?? [])
+    .map((item) => item?.games?.name)
+    .filter((name): name is string => typeof name === "string" && name.trim().length > 0);
+  const activities = venueGamesNames.length > 0
+    ? venueGamesNames
+    : Array.isArray(row.activities)
+      ? row.activities.filter((a): a is string => typeof a === "string" && a.trim().length > 0)
+      : [];
   const hasBooking = (row.venue_games ?? []).some((item) => {
     const mode = String(item?.booking_mode ?? "none");
     return mode !== "none";
@@ -1314,9 +1320,9 @@ export default function ExploreScreen() {
           venueGameMap.set(venueId, list);
         });
         const merged = baseVenues.map((venue) => {
-          if (venue.activities.length > 0) return venue;
+          // Always prefer venue_games (source of truth) over the potentially stale venues.activities column
           const extra = venueGameMap.get(venue.id);
-          return extra ? { ...venue, activities: extra } : venue;
+          return extra && extra.length > 0 ? { ...venue, activities: extra } : venue;
         });
         const mergedFingerprint = `${merged
           .map((v) => `${v.id}:${v.createdAt ?? ""}`)
