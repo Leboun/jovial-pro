@@ -66,7 +66,7 @@ export default function LoginScreen() {
 
   return (
     <>
-      <StatusBar hidden={true} />
+      <StatusBar style="light" hidden={false} />
       <KeyboardAvoidingView
         style={styles.root}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

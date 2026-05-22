@@ -1118,7 +1118,7 @@ export default function GroupDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar hidden={true} />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Pressable
           style={styles.coverWrap}

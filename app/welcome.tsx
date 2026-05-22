@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
 
   return (
     <>
-      <StatusBar hidden={true} />
+      <StatusBar style="light" hidden={false} />
       <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
 
         {/* Étoiles décoratives */}

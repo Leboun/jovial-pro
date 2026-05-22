@@ -847,7 +847,7 @@ export default function VenueScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar hidden={true} />
+      <StatusBar style="light" hidden={false} />
       {/* Modal horaires */}
       <Modal
         transparent

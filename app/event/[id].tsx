@@ -603,7 +603,7 @@ export default function EventScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar hidden={true} />
+      <StatusBar style="light" hidden={false} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.coverWrapper}>
           <Image source={coverUrl} style={styles.coverImage} contentFit="cover" transition={200} />
