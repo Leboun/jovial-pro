@@ -172,7 +172,7 @@ export default function ClubJovialScreen() {
   }
 
   // ── Mur d'upgrade : offre Visibilité ────────────────────────────────────────
-  if (!hasAccess) {
+  if (!hasAccess && !loading) {
     return (
       <JovialProShell
         currentPath={pathname}

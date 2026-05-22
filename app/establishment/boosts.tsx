@@ -246,7 +246,7 @@ export default function BoostsScreen() {
     );
   }
 
-  const noAccess = !caps || (tab === "explore" ? caps.spotlightQuota === 0 : caps.carouselBoostQuota === 0);
+  const noAccess = !loading && (!caps || (tab === "explore" ? caps.spotlightQuota === 0 : caps.carouselBoostQuota === 0));
 
   return (
     <JovialProShell title="Coup de projecteur & Sélection Jovial" currentPath="/establishment/boosts">
