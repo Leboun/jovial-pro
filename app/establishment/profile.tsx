@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import JovialProShell from "@/components/ui/JovialProShell";
@@ -437,37 +436,35 @@ export default function EstablishmentProfileScreen() {
     };
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!userId) return;
-      let cancelled = false;
-      const load = async () => {
-        setLoading(true);
-        try {
-          // Lire directement depuis Supabase pour avoir les données fraîches
-          let establishment: EstablishmentProfile | null = await getBackOfficeEstablishment(userId);
-          if (!establishment && previewMode) {
-            establishment = await ensureStubEstablishmentForPro(userId);
-          }
-          if (!establishment) {
-            if (!cancelled) setProfile(null);
-            return;
-          }
-          const sub = await getSubscription(establishment.id).catch(() => null);
-          if (!cancelled) {
-            hydrateProfileForm(establishment);
-            setSubscription(sub);
-          }
-        } catch {
-          if (!cancelled) setProfile(null);
-        } finally {
-          if (!cancelled) setLoading(false);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        let establishment: EstablishmentProfile | null = await getBackOfficeEstablishment(userId);
+        if (!establishment && previewMode) {
+          establishment = await ensureStubEstablishmentForPro(userId);
         }
-      };
-      load();
-      return () => { cancelled = true; };
-    }, [userId, previewMode])
-  );
+        if (!establishment) {
+          if (!cancelled) setProfile(null);
+          return;
+        }
+        const sub = await getSubscription(establishment.id).catch(() => null);
+        if (!cancelled) {
+          hydrateProfileForm(establishment);
+          setSubscription(sub);
+        }
+      } catch {
+        if (!cancelled) setProfile(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const handleInitializeProfile = async () => {
     if (!userId) return;
