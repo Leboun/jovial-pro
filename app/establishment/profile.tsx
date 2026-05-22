@@ -437,6 +437,8 @@ export default function EstablishmentProfileScreen() {
   useEffect(() => {
     if (!userId) return;
     if (estLoading) return;
+    // Ne charger le formulaire qu'une seule fois (quand profile est encore null)
+    if (profile) return;
 
     let cancelled = false;
     const load = async () => {
@@ -452,12 +454,6 @@ export default function EstablishmentProfileScreen() {
         }
         if (!cancelled) {
           hydrateProfileForm(establishment);
-        }
-
-        // Le check d'abonnement est suspendu jusqu'à l'intégration Stripe complète.
-        // Les utilisateurs établissement accèdent librement à leur fiche.
-
-        if (!cancelled) {
           setSubscription(ctxSubscription ?? null);
         }
       } catch {
@@ -472,7 +468,8 @@ export default function EstablishmentProfileScreen() {
     return () => {
       cancelled = true;
     };
-  }, [previewMode, userId, ctxVenue, ctxSubscription, estLoading]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estLoading, userId]);
 
   const handleInitializeProfile = async () => {
     if (!userId) return;
