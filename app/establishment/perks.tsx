@@ -187,14 +187,6 @@ export default function EstablishmentPerksScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -202,6 +194,7 @@ export default function EstablishmentPerksScreen() {
       subtitle="Offre des avantages exclusifs aux utilisateurs Jovial Premium pour les fidéliser et les attirer dans ton établissement."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
       rightSlot={
         <View style={styles.headerStats}>
           <Text style={styles.headerStatValue}>{activeCount}</Text>

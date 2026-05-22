@@ -147,14 +147,6 @@ export default function EstablishmentEventsScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -162,6 +154,7 @@ export default function EstablishmentEventsScreen() {
       subtitle="Retrouvez ici toute la programmation du lieu. Épinglez un événement pour le mettre en avant dans l'application."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
     >
       <View style={styles.headerRow}>
         <Text style={styles.title}>Vos événements</Text>

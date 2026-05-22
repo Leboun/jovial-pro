@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -49,6 +50,7 @@ type Props = {
   navVariant?: "full" | "profile-only";
   onRefresh?: () => void;
   refreshing?: boolean;
+  loading?: boolean;
 };
 
 export default function JovialProShell({
@@ -61,6 +63,7 @@ export default function JovialProShell({
   navVariant = "full",
   onRefresh,
   refreshing = false,
+  loading = false,
 }: Props) {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -247,7 +250,7 @@ export default function JovialProShell({
               showsVerticalScrollIndicator={false}
               refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#111827" /> : undefined}
             >
-              {children}
+              {loading ? <View style={styles.loadingBox}><ActivityIndicator color={Pastel.primary} size="large" /></View> : children}
             </ScrollView>
           </View>
         </View>
@@ -264,7 +267,7 @@ export default function JovialProShell({
             {subtitle ? <Text style={styles.pageSubtitle}>{subtitle}</Text> : null}
             {rightSlot ? <View style={styles.mobileRightSlot}>{rightSlot}</View> : null}
           </View>
-          {children}
+          {loading ? <View style={styles.loadingBox}><ActivityIndicator color={Pastel.primary} size="large" /></View> : children}
         </ScrollView>
       )}
     </View>
@@ -275,6 +278,12 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: Pastel.background,
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
   },
   desktopLayout: {
     flex: 1,

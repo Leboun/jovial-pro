@@ -301,14 +301,6 @@ export default function EstablishmentBlackoutsScreen() {
     } catch { /* ignore */ }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#111827" />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -316,6 +308,7 @@ export default function EstablishmentBlackoutsScreen() {
       subtitle="Gérez les fermetures exceptionnelles et les blocages d'activités."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
     >
       {/* Tabs */}
       <View style={styles.tabs}>

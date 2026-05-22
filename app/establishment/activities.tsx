@@ -248,14 +248,6 @@ export default function EstablishmentActivitiesScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -263,6 +255,7 @@ export default function EstablishmentActivitiesScreen() {
       subtitle="Pilotez les activités mises en avant sur la fiche et celles qui peuvent être réservées."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
       rightSlot={
         <View style={styles.headerStats}>
           <Text style={styles.headerStatValue}>{activities.length}</Text>

@@ -205,14 +205,6 @@ export default function EstablishmentPhotosScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -220,6 +212,7 @@ export default function EstablishmentPhotosScreen() {
       subtitle="Ajoutez jusqu'à 10 photos, organisez leur ordre et choisissez la preview en mettant la photo voulue en première position."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
       rightSlot={
         <View style={styles.counterCard}>
           <Text style={styles.counterValue}>{photos.length}/{MAX_PHOTOS}</Text>

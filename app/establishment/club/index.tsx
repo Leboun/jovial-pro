@@ -171,14 +171,6 @@ export default function ClubJovialScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
-      </View>
-    );
-  }
-
   // ── Mur d'upgrade : offre Visibilité ────────────────────────────────────────
   if (!hasAccess) {
     return (
@@ -311,6 +303,7 @@ export default function ClubJovialScreen() {
       currentPath={pathname}
       title="Club Jovial"
       subtitle={`Gérez votre club, vos publications et vos membres.`}
+      loading={loading}
     >
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 

@@ -864,15 +864,7 @@ export default function EstablishmentProfileScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
-  if (!profile) {
+  if (!profile && !loading) {
     return (
       <JovialProShell
         currentPath={pathname}
@@ -907,6 +899,7 @@ export default function EstablishmentProfileScreen() {
       title="Ma fiche"
       navVariant="full"
       subtitle="Renseigne les informations essentielles de ton etablissement. Les photos, activites et evenements sont geres dans leurs onglets dedies."
+      loading={loading}
       rightSlot={
         <View style={styles.progressCard}>
           <Text style={styles.progressValue}>

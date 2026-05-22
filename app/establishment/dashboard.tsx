@@ -135,15 +135,7 @@ export default function EstablishmentDashboard() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={Pastel.primary} />
-      </View>
-    );
-  }
-
-  if (!profile) {
+  if (!profile && !loading) {
     return (
       <JovialProShell
         currentPath={pathname}
@@ -167,9 +159,10 @@ export default function EstablishmentDashboard() {
     <JovialProShell
       currentPath={pathname}
       title="Dashboard"
-      subtitle={`Bonjour ${profile.name ?? "partenaire"}, voici les points prioritaires de ton espace.`}
+      subtitle={`Bonjour ${profile?.name ?? "partenaire"}, voici les points prioritaires de ton espace.`}
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
       rightSlot={
         currentOffer ? (
           <View style={styles.offerBadge}>

@@ -161,14 +161,6 @@ export default function EstablishmentReservationsScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#2B4E93"} />
-      </View>
-    );
-  }
-
   return (
     <JovialProShell
       currentPath={pathname}
@@ -176,6 +168,7 @@ export default function EstablishmentReservationsScreen() {
       subtitle="Suivez les demandes reçues pour les activités et préparez les prochaines venues."
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      loading={loading}
     >
       <View style={styles.tabRow}>
         {TABS.map((tab) => {
