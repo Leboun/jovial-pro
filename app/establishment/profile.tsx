@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import JovialProShell from "@/components/ui/JovialProShell";
@@ -434,42 +435,38 @@ export default function EstablishmentProfileScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-    if (estLoading) return;
-    // Ne charger le formulaire qu'une seule fois (quand profile est encore null)
-    if (profile) return;
-
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        let establishment: EstablishmentProfile | null = ctxVenue ?? null;
-        if (!establishment && previewMode) {
-          establishment = await ensureStubEstablishmentForPro(userId);
-        }
-        if (!establishment) {
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      let cancelled = false;
+      const load = async () => {
+        setLoading(true);
+        try {
+          await refreshEstablishment();
+          const establishment: EstablishmentProfile | null = ctxVenue ?? null;
+          if (!establishment && previewMode) {
+            const stub = await ensureStubEstablishmentForPro(userId);
+            if (!cancelled && stub) hydrateProfileForm(stub);
+            return;
+          }
+          if (!establishment) {
+            if (!cancelled) setProfile(null);
+            return;
+          }
+          if (!cancelled) {
+            hydrateProfileForm(establishment);
+            setSubscription(ctxSubscription ?? null);
+          }
+        } catch {
           if (!cancelled) setProfile(null);
-          return;
+        } finally {
+          if (!cancelled) setLoading(false);
         }
-        if (!cancelled) {
-          hydrateProfileForm(establishment);
-          setSubscription(ctxSubscription ?? null);
-        }
-      } catch {
-        if (!cancelled) setProfile(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estLoading, userId]);
+      };
+      load();
+      return () => { cancelled = true; };
+    }, [userId, previewMode])
+  );
 
   const handleInitializeProfile = async () => {
     if (!userId) return;
@@ -827,7 +824,7 @@ export default function EstablishmentProfileScreen() {
       });
       if (updated) setProfile(updated);
       setSaveStatus("saved");
-      refreshEstablishment();
+      await refreshEstablishment();
       setSaveMessage({ type: "success", text: "Fiche mise à jour avec succès." });
     } catch (err) {
       console.error("Save error:", err);
