@@ -41,3 +41,7 @@ export function getExploreCache() {
 export function setExploreCache(entry: ExploreCacheEntry) {
   exploreCache = { ...entry, updatedAt: Date.now() };
 }
+
+export function invalidateExploreCache() {
+  exploreCache = null;
+}

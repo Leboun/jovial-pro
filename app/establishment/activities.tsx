@@ -19,6 +19,7 @@ import {
 } from "@/services/bookings";
 import { ensureEstablishmentFeatureAccess } from "@/utils/establishmentProGate";
 import { getPlanCapabilities } from "@/utils/planFeatureGate";
+import { invalidateExploreCache } from "@/services/exploreCache";
 
 export default function EstablishmentActivitiesScreen() {
   const router = useRouter();
@@ -120,6 +121,7 @@ export default function EstablishmentActivitiesScreen() {
     );
     try {
       await toggleActivityFeatured(activity.id, establishmentId, next);
+      invalidateExploreCache();
     } catch {
       setActivities((prev) =>
         prev.map((a) => (a.id === activity.id ? { ...a, is_featured: activity.is_featured } : a))
@@ -198,6 +200,7 @@ export default function EstablishmentActivitiesScreen() {
         paymentRequired,
         priceCents: Math.round((paymentRequired ? parsedPrice : 0) * 100),
       });
+      invalidateExploreCache();
       await loadActivities(establishmentId);
       resetForm();
     } catch (err) {
@@ -232,6 +235,7 @@ export default function EstablishmentActivitiesScreen() {
     try {
       setSaving(true);
       await deleteVenueBookingActivity(targetId);
+      invalidateExploreCache();
       if (establishmentId) await loadActivities(establishmentId);
       if (editingId === targetId) resetForm();
     } catch {

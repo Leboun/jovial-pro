@@ -31,6 +31,7 @@ import {
 } from "@/services/establishment";
 import { isEstablishmentFicheComplete } from "@/utils/establishmentFiche";
 import type { DayKey, OpeningHours } from "@/utils/openingHours";
+import { invalidateExploreCache } from "@/services/exploreCache";
 
 type OpeningSlot = { open: string; close: string };
 
@@ -822,6 +823,7 @@ export default function EstablishmentProfileScreen() {
       });
       if (updated) setProfile(updated);
       setSaveStatus("saved");
+      invalidateExploreCache();
       await refreshEstablishment();
       setSaveMessage({ type: "success", text: "Fiche mise à jour avec succès." });
     } catch (err) {
