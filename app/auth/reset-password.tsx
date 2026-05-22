@@ -82,7 +82,7 @@ export default function ResetPasswordScreen() {
   if (!sessionReady) {
     return (
       <View style={styles.center}>
-        <StatusBar style="light" />
+        <StatusBar hidden={true} />
         <ActivityIndicator color="#FFFFFF" size="large" />
         <Text style={styles.loadingText}>Vérification du lien...</Text>
       </View>
@@ -91,7 +91,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar hidden={true} />
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
           style={styles.root}

@@ -104,7 +104,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark" hidden={false} />
+        <StatusBar hidden={true} />
         <SafeAreaView
           style={{ flex: 1, backgroundColor: "transparent" }}
           edges={[]}
