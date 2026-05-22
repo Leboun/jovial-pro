@@ -297,7 +297,7 @@ export default function EstablishmentProfileScreen() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
   const previewMode = isEstablishmentPreviewEnabled(userId);
-  const { venue: ctxVenue, subscription: ctxSubscription, loading: estLoading } = useEstablishment();
+  const { venue: ctxVenue, subscription: ctxSubscription, loading: estLoading, refresh: refreshEstablishment } = useEstablishment();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -827,6 +827,7 @@ export default function EstablishmentProfileScreen() {
       });
       if (updated) setProfile(updated);
       setSaveStatus("saved");
+      refreshEstablishment();
       setSaveMessage({ type: "success", text: "Fiche mise à jour avec succès." });
     } catch (err) {
       console.error("Save error:", err);
