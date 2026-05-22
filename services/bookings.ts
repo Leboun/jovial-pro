@@ -55,7 +55,7 @@ const formatSlotLabel = (date: Date) => {
 
 const getDayKey = (date: Date) => DAY_KEYS[date.getDay()];
 
-async function syncVenueActivitiesSummary(venueId: number) {
+export async function syncVenueActivitiesSummary(venueId: number) {
   const rows = await fetchVenueBookingActivities(venueId);
   const featured = rows.filter((a): a is VenueBookingActivity => !!a && a.is_featured).map((a) => a.name.trim());
   const rest = rows.filter((a): a is VenueBookingActivity => !!a && !a.is_featured).map((a) => a.name.trim());

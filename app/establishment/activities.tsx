@@ -11,6 +11,7 @@ import {
   deleteVenueBookingActivity,
   fetchGamesCatalog,
   fetchVenueBookingActivities,
+  syncVenueActivitiesSummary,
   GameOption,
   toggleActivityFeatured,
   upsertVenueBookingActivity,
@@ -58,6 +59,8 @@ export default function EstablishmentActivitiesScreen() {
             return;
           }
           const [rows, allGames] = await Promise.all([fetchVenueBookingActivities(gate.venueId), fetchGamesCatalog()]);
+          // Sync venues.activities so the map preview card stays up-to-date
+          syncVenueActivitiesSummary(gate.venueId).catch(() => null);
           const cleanRows = rows.filter((a): a is VenueBookingActivity => a != null);
           const caps = getPlanCapabilities(subscription?.plan);
           if (!cancelled) { setActivities(cleanRows); setGames(allGames); setEstablishmentId(gate.venueId); setTagsLimit(caps?.tagsLimit ?? 3); }
