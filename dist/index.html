@@ -27,10 +27,28 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <style id="jovial-statusbar">
-    html, body { background-color: #F2EDE4; }
+    /*
+     * Bandeau beige fixe derriÃ¨re la barre systÃ¨me (heure / rÃ©seau / batterie).
+     * Le pseudo-element body::before crÃ©e le bandeau, toujours visible,
+     * que la page soit claire ou foncÃ©e.
+     * #root est dÃ©calÃ© vers le bas de la mÃªme hauteur (env safe-area).
+     */
+    html, body {
+      background-color: #F2EDE4;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top);
+      background-color: #F2EDE4;
+      z-index: 999999;
+    }
     #root {
       padding-top: env(safe-area-inset-top);
-      background-color: #F2EDE4;
+      background-color: #ffffff;
       box-sizing: border-box;
     }
   </style></head>

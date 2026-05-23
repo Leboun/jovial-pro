@@ -37,10 +37,28 @@ if (Test-Path $htmlPath) {
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <style id="jovial-statusbar">
-    html, body { background-color: #F2EDE4; }
+    /*
+     * Bandeau beige fixe derrière la barre système (heure / réseau / batterie).
+     * Le pseudo-element body::before crée le bandeau, toujours visible,
+     * que la page soit claire ou foncée.
+     * #root est décalé vers le bas de la même hauteur (env safe-area).
+     */
+    html, body {
+      background-color: #F2EDE4;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top);
+      background-color: #F2EDE4;
+      z-index: 999999;
+    }
     #root {
       padding-top: env(safe-area-inset-top);
-      background-color: #F2EDE4;
+      background-color: #ffffff;
       box-sizing: border-box;
     }
   </style>
