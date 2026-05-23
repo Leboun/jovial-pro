@@ -35,13 +35,13 @@ if (Test-Path $htmlPath) {
     $inject = @'
   <meta name="theme-color" content="#F2EDE4" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style id="jovial-statusbar">
     /*
-     * Bandeau beige fixe derrière la barre système (heure / réseau / batterie).
-     * Le pseudo-element body::before crée le bandeau, toujours visible,
-     * que la page soit claire ou foncée.
-     * #root est décalé vers le bas de la même hauteur (env safe-area).
+     * black-translucent : le viewport couvre tout l'ecran (y compris sous la barre systeme).
+     * env(safe-area-inset-top) = hauteur exacte de la barre (47-59px selon iPhone).
+     * body::before cree un bandeau beige fixe qui se glisse derriere la barre transparente.
+     * #root est pousse vers le bas pour que le contenu commence sous le bandeau.
      */
     html, body {
       background-color: #F2EDE4;
