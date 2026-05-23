@@ -1,6 +1,6 @@
 import { Stack, Redirect, usePathname, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Platform, View, Text, useWindowDimensions, StyleSheet, Image, StatusBar as RNStatusBar } from "react-native";
+import { ActivityIndicator, Platform, View, Text, useWindowDimensions, StyleSheet, Image } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "../providers/AuthProvider";
@@ -104,19 +104,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        {/* Barre système (heure, batterie…) — fond beige, icônes sombres */}
-        <StatusBar style="dark" hidden={false} translucent backgroundColor="#F2EDE4" />
-        <SafeAreaView
-          style={{ flex: 1, backgroundColor: "#F2EDE4" }}
-          edges={["top"]}
-        >
-          <View style={{ flex: 1, backgroundColor: "transparent" }}>
-            <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="venue/[id]" options={{ gestureEnabled: true }} />
-              <Stack.Screen name="event/[id]" options={{ gestureEnabled: true }} />
-            </Stack>
-          </View>
+        <StatusBar style="dark" hidden={false} />
+        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }} edges={[]}>
+          <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="venue/[id]" options={{ gestureEnabled: true }} />
+            <Stack.Screen name="event/[id]" options={{ gestureEnabled: true }} />
+          </Stack>
         </SafeAreaView>
 
         <RouteTracker />

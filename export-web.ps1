@@ -23,6 +23,35 @@ foreach ($f in $bundles) {
 }
 Write-Host "Bundle JS patche" -ForegroundColor Green
 
+# Patch index.html — bandeau status bar beige + safe area
+$htmlPath = "dist\index.html"
+if (Test-Path $htmlPath) {
+    $html = Get-Content $htmlPath -Raw
+
+    # 1. viewport-fit=cover pour que env(safe-area-inset-top) fonctionne
+    $html = $html -replace 'initial-scale=1, shrink-to-fit=no', 'initial-scale=1, shrink-to-fit=no, viewport-fit=cover'
+
+    # 2. Injecter meta tags + styles juste avant </head>
+    $inject = @'
+  <meta name="theme-color" content="#F2EDE4" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <style id="jovial-statusbar">
+    html, body { background-color: #F2EDE4; }
+    #root {
+      padding-top: env(safe-area-inset-top);
+      background-color: #F2EDE4;
+      box-sizing: border-box;
+    }
+  </style>
+'@
+    $html = $html -replace '</head>', "$inject</head>"
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText("$PSScriptRoot\$htmlPath", $html, $utf8NoBom)
+    Write-Host "index.html patche (status bar beige)" -ForegroundColor Green
+}
+
 # vercel.json sans BOM
 $json = '{"rewrites":[{"source":"/((?!_expo|assets|favicon.png|metadata.json).*)","destination":"/index.html"}]}'
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>Jovial</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
@@ -23,7 +23,17 @@
         flex: 1;
       }
     </style>
-  <link rel="icon" href="/favicon.ico" /></head>
+  <link rel="icon" href="/favicon.ico" />  <meta name="theme-color" content="#F2EDE4" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <style id="jovial-statusbar">
+    html, body { background-color: #F2EDE4; }
+    #root {
+      padding-top: env(safe-area-inset-top);
+      background-color: #F2EDE4;
+      box-sizing: border-box;
+    }
+  </style></head>
 
   <body>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
@@ -32,6 +42,6 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/_expo/static/js/web/entry-25e6b1f012958cf3092cd904863e49b3.js" defer></script>
+  <script src="/_expo/static/js/web/entry-0a765e77b0e583aabd959934c9c5fffc.js" defer></script>
 </body>
 </html>
