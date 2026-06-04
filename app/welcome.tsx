@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
   },
   ctaBtn: {
     marginTop: 8,
-    backgroundColor: Pastel.orange,
+    backgroundColor: Pastel.teal,
     paddingVertical: 16,
     paddingHorizontal: 52,
     borderRadius: 14,
-    shadowColor: Pastel.orange,
+    shadowColor: Pastel.teal,
     shadowOpacity: 0.55,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },

@@ -227,11 +227,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.18)",
   },
   btn: {
-    backgroundColor: Pastel.orange,
+    backgroundColor: Pastel.teal,
     paddingVertical: 17,
     alignItems: "center",
     borderRadius: 14,
-    shadowColor: Pastel.orange,
+    shadowColor: Pastel.teal,
     shadowOpacity: 0.45,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },

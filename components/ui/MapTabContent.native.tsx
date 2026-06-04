@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -192,26 +192,33 @@ function VenuePin({ venue, isActive, isFavorite, isSpotlight }: { venue: Venue; 
     : tone === "closed" ? "#FFF1F2"
     : "#FFFFFF";
 
-  const size = isActive ? 56 : 48;
+  // Taille de vue CONSTANTE : le marqueur garde toujours la même empreinte,
+  // sinon react-native-maps le projette en haut à gauche (0,0) sur Android quand
+  // la taille change au moment de la sélection. On ne fait varier que le dessin interne.
+  // La boîte (60) est plus grande que le dessin max (56) pour laisser une marge :
+  // sans ça, Android rogne le cercle et le badge ("pins coupés").
+  const BOX = 60;
+  const center = BOX / 2;
+  const visualSize = isActive ? 56 : 48;
   const strokeWidth = isActive || isSpotlight ? 3 : 2.5;
-  const r = size / 2 - strokeWidth / 2;
+  const r = visualSize / 2 - strokeWidth / 2;
   const badge = isSpotlight ? "⚡" : isFavorite ? "❤️" : (!isActive && venue.nextEvent && !isEventOnly) ? "🔶" : null;
   const fontSize = isActive ? 20 : 17;
 
   return (
-    <View collapsable={false} style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
+    <View collapsable={false} style={{ width: BOX, height: BOX, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={BOX} height={BOX}>
         <Circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={center}
+          cy={center}
           r={r}
           fill={fillColor}
           stroke={strokeColor}
           strokeWidth={strokeWidth}
         />
         <SvgText
-          x={size / 2}
-          y={size / 2 + fontSize * 0.35}
+          x={center}
+          y={center + fontSize * 0.35}
           fontSize={fontSize}
           textAnchor="middle"
         >
@@ -219,8 +226,8 @@ function VenuePin({ venue, isActive, isFavorite, isSpotlight }: { venue: Venue; 
         </SvgText>
         {badge ? (
           <SvgText
-            x={size - 4}
-            y={10}
+            x={BOX - 12}
+            y={12}
             fontSize={10}
             textAnchor="middle"
           >
@@ -256,6 +263,7 @@ function PinMarker({ venue, isActive, isFavorite, isSpotlight, onPress }: {
       coordinate={{ latitude: venue.lat, longitude: venue.lng }}
       onPress={onPress}
       tracksViewChanges={tracksViewChanges}
+      anchor={{ x: 0.5, y: 0.5 }}
     >
       <VenuePin venue={venue} isActive={isActive} isFavorite={isFavorite} isSpotlight={isSpotlight} />
     </Marker>
@@ -264,6 +272,7 @@ function PinMarker({ venue, isActive, isFavorite, isSpotlight, onPress }: {
 
 export default function MapTabContentNative() {
   const router = useRouter();
+  const mapRef = useRef<MapView>(null);
   const { width: screenWidth } = useWindowDimensions();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
@@ -340,7 +349,10 @@ export default function MapTabContentNative() {
         const position = await Location.getCurrentPositionAsync({});
         const coords = { latitude: position.coords.latitude, longitude: position.coords.longitude };
         setUserCoords(coords);
-        setRegion({ latitude: coords.latitude, longitude: coords.longitude, latitudeDelta: 0.08, longitudeDelta: 0.08 });
+        const gpsRegion = { latitude: coords.latitude, longitude: coords.longitude, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+        setRegion(gpsRegion);
+        // Si la carte est déjà montée quand le GPS répond, on l'anime ; sinon initialRegion s'en charge.
+        mapRef.current?.animateToRegion(gpsRegion, 350);
 
         subscription = await Location.watchPositionAsync(
           { accuracy: Location.Accuracy.Balanced, distanceInterval: 25 },
@@ -463,9 +475,29 @@ export default function MapTabContentNative() {
     return getOpeningStatus(selectedVenue.opening_hours, selectedVenue.timezone ?? null);
   }, [selectedVenue]);
 
+  // Anime la carte pour amener le lieu sélectionné dans le tiers supérieur de l'écran,
+  // au-dessus de la carte de preview (qui occupe le bas). On décale le centre vers le sud
+  // pour que le pin apparaisse plus haut sans être masqué.
+  const focusVenue = (venue: Venue) => {
+    const latDelta = region.latitudeDelta || DEFAULT_REGION.latitudeDelta;
+    const lngDelta = region.longitudeDelta || DEFAULT_REGION.longitudeDelta;
+    mapRef.current?.animateToRegion(
+      {
+        latitude: venue.lat - latDelta * 0.18,
+        longitude: venue.lng,
+        latitudeDelta: latDelta,
+        longitudeDelta: lngDelta,
+      },
+      350
+    );
+  };
+
   const recenter = async () => {
     if (!userCoords) return;
-    setRegion({ latitude: userCoords.latitude, longitude: userCoords.longitude, latitudeDelta: 0.08, longitudeDelta: 0.08 });
+    mapRef.current?.animateToRegion(
+      { latitude: userCoords.latitude, longitude: userCoords.longitude, latitudeDelta: 0.08, longitudeDelta: 0.08 },
+      350
+    );
   };
 
   if (loading && venues.length === 0) {
@@ -480,9 +512,9 @@ export default function MapTabContentNative() {
     <View style={styles.screen}>
       <StatusBar style="light" />
       <MapView
+        ref={mapRef}
         style={styles.map}
         initialRegion={region}
-        region={region}
         onRegionChangeComplete={setRegion}
         customMapStyle={MAP_STYLE}
         showsUserLocation={gpsOk}
@@ -497,7 +529,7 @@ export default function MapTabContentNative() {
             isActive={selectedVenue?.id === venue.id}
             isFavorite={favoriteIds.has(String(venue.id))}
             isSpotlight={spotlightVenueId === Number(venue.id)}
-            onPress={() => { setSelectedVenue(venue); setPreviewVisible(true); }}
+            onPress={() => { setSelectedVenue(venue); setPreviewVisible(true); focusVenue(venue); }}
           />
         ))}
       </MapView>

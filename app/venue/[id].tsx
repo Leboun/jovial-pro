@@ -1,5 +1,5 @@
 ﻿// mobile/app/venue/[id].tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   View,
@@ -13,6 +13,7 @@ import {
   Dimensions,
   Modal,
   TextInput,
+  Share,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -142,16 +143,22 @@ function getQuantityUnit(name: string, quantity: number): string {
 
 function activityEmoji(name: string) {
   const v = normalizeActivity(name);
-  if (v.includes("flechette") || v.includes("dart")) return "\u{1F3AF}";
-  if (v.includes("beer pong")) return "\u{1F37A}";
-  if (v.includes("babyfoot") || v.includes("foosball")) return "\u{26BD}\u{FE0F}";
-  if (v.includes("petanque")) return "\u{1F7E2}";
-  if (v.includes("bowling")) return "\u{1F3B3}";
-  if (v.includes("billard") || v.includes("pool")) return "\u{1F3B1}";
-  if (v.includes("karaoke") || v.includes("karaok")) return "\u{1F3A4}";
-  if (v.includes("hache") || v.includes("axe")) return "\u{1FA93}";
-  if (v.includes("wine") || v.includes("vin")) return "\u{1F377}";
-  return "\u{2728}";
+  if (v.includes("flechette") || v.includes("dart")) return "🎯";
+  if (v.includes("billard") || v.includes("pool")) return "🎱";
+  if (v.includes("babyfoot") || v.includes("baby foot") || v.includes("baby-foot") || v.includes("foosball")) return "⚽";
+  if (v.includes("palet")) return "🥏";
+  if (v.includes("petanque")) return "🥎";
+  if (v.includes("bowling")) return "🎳";
+  if (v.includes("beer pong") || v.includes("beerpong")) return "🍺";
+  if (v.includes("hache") || v.includes("axe")) return "🪓";
+  if (v.includes("karaok")) return "🎤";
+  if (v.includes("blind") || v.includes("quiz")) return "🎵";
+  if (v.includes("carte") || v.includes("poker")) return "🃏";
+  if (v.includes("echec")) return "♟️";
+  if (v.includes("ping") || v.includes("tennis de table") || v.includes("tennis")) return "🏓";
+  if (v.includes("jeu") || v.includes("societe")) return "🎲";
+  if (v.includes("wine") || v.includes("vin")) return "🍷";
+  return "🎮";
 }
 
 function normalizePhone(raw?: string | null) {
@@ -165,6 +172,18 @@ export default function VenueScreen() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
   const { isPremium: userIsPremium } = useIsPremium();
+
+  // Défilement vers la section "Événements à venir" + bouton flottant de découverte
+  const scrollRef = useRef<ScrollView>(null);
+  const contentCardY = useRef(0);
+  const eventsOffsetY = useRef(0);
+  // Visible à l'ouverture de la fiche ; masqué dès qu'on interagit (clic bouton,
+  // réservation, ouverture d'un événement). Ne réapparaît qu'à une nouvelle ouverture de fiche.
+  const [eventHintVisible, setEventHintVisible] = useState(true);
+  const scrollToEvents = () => {
+    setEventHintVisible(false);
+    scrollRef.current?.scrollTo({ y: Math.max(contentCardY.current + eventsOffsetY.current - 12, 0), animated: true });
+  };
 
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -509,6 +528,18 @@ export default function VenueScreen() {
     Linking.openURL(`tel:${phone}`).catch((err) => console.error("Cannot start call", err));
   };
 
+  const handleShare = async () => {
+    if (!venue) return;
+    const where = [venue.address, venue.postcode, venue.city].filter(Boolean).join(", ");
+    try {
+      await Share.share({
+        message: `Découvre ${venue.name} sur Jovial${where ? ` — ${where}` : ""} !`,
+      });
+    } catch {
+      /* partage annulé : non bloquant */
+    }
+  };
+
   const parseEventStart = (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return null;
@@ -632,6 +663,7 @@ export default function VenueScreen() {
   }, [bookingActivity, bookingDate, id, venue?.opening_hours]);
 
   const handleBookingOpen = (activity: VenueActivity) => {
+    setEventHintVisible(false);
     setBookingSuccess(false);
     setBookingError(null);
     if (activity.booking_mode === "external" && activity.booking_url) {
@@ -783,6 +815,7 @@ export default function VenueScreen() {
     });
   }, [venue?.opening_hours]);
   const openEvent = (eventId: number) => {
+    setEventHintVisible(false);
     router.push(`/event/${eventId}?fromVenue=1` as any);
   };
 
@@ -1010,7 +1043,7 @@ export default function VenueScreen() {
         </Pressable>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.coverWrapper}>
           <ScrollView
             horizontal
@@ -1049,68 +1082,77 @@ export default function VenueScreen() {
             color={isFavorite ? "#EF4444" : Pastel.text}
           />
         </Pressable>
+        <Pressable style={[styles.shareButton, { top: insets.top + 10 }]} onPress={handleShare}>
+          <Ionicons name="share-outline" size={20} color={Pastel.text} />
+        </Pressable>
 
-        <View style={styles.contentCard}>
+        <View style={styles.contentCard} onLayout={(e) => { contentCardY.current = e.nativeEvent.layout.y; }}>
 
           {/* Identité du lieu */}
           <View style={styles.venueHeaderBlock}>
-            <View style={styles.statusRow}>
+            <View style={styles.identityRow}>
+              <View style={styles.venueAvatar}>
+                <Text style={styles.venueAvatarLetter}>
+                  {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              {(venue.venue_type || venue.city) ? (
+                <Text style={styles.metaText}>
+                  {[venue.venue_type, venue.city].filter(Boolean).join("  ·  ")}
+                </Text>
+              ) : null}
               {openingStatus.status !== "unknown" ? (
-                <>
+                <View style={styles.metaStatus}>
                   <View style={[styles.statusDot, openingStatus.isOpen ? styles.statusDotOpen : styles.statusDotClosed]} />
                   <Text style={[styles.statusText, openingStatus.isOpen ? styles.statusTextOpen : styles.statusTextClosed]}>
                     {openingStatus.isOpen ? "Ouvert" : "Fermé"}
                   </Text>
-                </>
-              ) : null}
-              {perks.length > 0 ? (
-                <Pressable onPress={() => setPerksPreviewOpen(true)} hitSlop={8} style={styles.premiumPill}>
-                  <Ionicons name="gift-outline" size={13} color="#92400E" />
-                  <Text style={styles.premiumPillText}>Un avantage t'attend ici</Text>
-                  <Ionicons name="chevron-forward" size={13} color="#92400E" />
-                </Pressable>
+                </View>
               ) : null}
             </View>
-            <Text style={styles.venueName} adjustsFontSizeToFit numberOfLines={1}>{venue.name}</Text>
           </View>
 
           <Text style={styles.venueDescription} numberOfLines={2} ellipsizeMode="tail">{venue.description?.trim() || venuePitch}</Text>
 
-          {(venue.venue_type || (venue.venue_ambiance && venue.venue_ambiance.length > 0)) ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tagsScrollRow}
-            >
-              {venue.venue_type ? (
-                <View style={styles.typeTagPill}>
-                  <Text style={styles.typeTagPillText}>{venue.venue_type}</Text>
-                </View>
-              ) : null}
-              {(venue.venue_ambiance ?? []).map((tag) => (
+          {venue.venue_ambiance && venue.venue_ambiance.length > 0 ? (
+            <View style={styles.tagsWrapRow}>
+              {venue.venue_ambiance.map((tag) => (
                 <View key={tag} style={styles.ambianceTagPill}>
                   <Text style={styles.ambianceTagPillText}>{tag}</Text>
                 </View>
               ))}
-            </ScrollView>
+            </View>
           ) : null}
 
-          <View style={styles.actionsRow}>
-            <Pressable style={styles.actionBtn} onPress={handleDirections}>
-              <Ionicons name="navigate-outline" size={22} color={Pastel.text} />
-              <Text style={styles.actionBtnText}>Itinéraire</Text>
-            </Pressable>
-            <Pressable style={styles.actionBtn} onPress={() => setInfosModalOpen(true)}>
-              <Ionicons name="information-circle-outline" size={22} color={Pastel.text} />
-              <Text style={styles.actionBtnText}>Infos utiles</Text>
-            </Pressable>
-            {social ? (
-              <Pressable style={[styles.actionBtn, styles.actionBtnSocial]} onPress={handleOpenSocial}>
-                <Ionicons name={social.icon as any} size={22} color="#FFFFFF" />
-                <Text style={[styles.actionBtnText, styles.actionBtnSocialText]}>{social.label}</Text>
-              </Pressable>
-            ) : null}
+          {/* Actions secondaires — barre segmentée compacte (une seule ligne) */}
+          <View style={styles.actionBar}>
+            {(() => {
+              const items: { key: string; icon: string; label: string; onPress: () => void }[] = [];
+              if (venue.address || venue.city) items.push({ key: "dir", icon: "navigate", label: "Itinéraire", onPress: handleDirections });
+              items.push({ key: "hours", icon: "time-outline", label: "Horaires", onPress: () => setInfosModalOpen(true) });
+              if (social) items.push({ key: "social", icon: social.icon, label: social.label, onPress: handleOpenSocial });
+              return items.map((it, i) => (
+                <React.Fragment key={it.key}>
+                  {i > 0 ? <View style={styles.actionBarSep} /> : null}
+                  <Pressable style={styles.actionBarItem} onPress={it.onPress}>
+                    <Ionicons name={it.icon as any} size={20} color={Pastel.primary} />
+                    <Text style={styles.actionBarLabel} numberOfLines={1}>{it.label}</Text>
+                  </Pressable>
+                </React.Fragment>
+              ));
+            })()}
           </View>
+
+          {perks.length > 0 ? (
+            <Pressable style={styles.perkHighlight} onPress={() => setPerksPreviewOpen(true)}>
+              <Ionicons name="gift" size={20} color={Pastel.teal} />
+              <Text style={styles.perkHighlightText} numberOfLines={1}>Un avantage t'attend ici</Text>
+              <Ionicons name="chevron-forward" size={16} color={Pastel.teal} />
+            </Pressable>
+          ) : null}
 
           <View style={styles.sectionDivider} />
 
@@ -1140,12 +1182,13 @@ export default function VenueScreen() {
                   return (
                     <Pressable
                       key={activity.id}
-                      style={[styles.activityCardNew, isBookable && styles.activityCardNewBookable]}
+                      style={styles.activityCardNew}
                       onPress={() => isBookable && handleBookingOpen(activity)}
+                      disabled={!isBookable}
                     >
                       <Text style={styles.activityCardEmojiLarge}>{activityEmoji(activity.name)}</Text>
-                      <Text style={[styles.activityCardNameNew, isBookable && { color: "#FFFFFF" }]}>{activity.name}</Text>
-                      <Text style={[styles.activityCardQuantityText, isBookable && { color: "rgba(255,255,255,0.6)" }]}>
+                      <Text style={styles.activityCardNameNew}>{activity.name}</Text>
+                      <Text style={styles.activityCardQuantityText}>
                         {activity.quantity} {getQuantityUnit(activity.name, activity.quantity)}
                       </Text>
                       {isBookable ? (
@@ -1153,11 +1196,14 @@ export default function VenueScreen() {
                           <Text style={styles.activityCardBookBadgeText}>
                             {activity.payment_required
                               ? `${(activity.price_cents / 100).toFixed(2).replace(".", ",")} ${activity.currency}`
-                              : "Réserver · Gratuit"}
+                              : "Réserver"}
                           </Text>
                         </View>
                       ) : (
-                        <Text style={styles.activityCardFreeBadge}>Sur place</Text>
+                        <View style={styles.activityOnSite}>
+                          <Ionicons name="walk-outline" size={13} color="rgba(255,255,255,0.75)" />
+                          <Text style={styles.activityOnSiteText}>Sur place</Text>
+                        </View>
                       )}
                     </Pressable>
                   );
@@ -1168,7 +1214,7 @@ export default function VenueScreen() {
 
           {/* Événements */}
           {events.length > 0 ? (
-            <View style={styles.venueSection}>
+            <View style={styles.venueSection} onLayout={(e) => { eventsOffsetY.current = e.nativeEvent.layout.y; }}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionHeaderTitle}>Événements à venir</Text>
                 {events.length > 1 ? (
@@ -1213,6 +1259,16 @@ export default function VenueScreen() {
 
         </View>
       </ScrollView>
+
+      {events.length > 0 && eventHintVisible ? (
+        <View style={[styles.eventFabWrap, { bottom: insets.bottom + 6 }]} pointerEvents="box-none">
+          <Pressable style={styles.eventFab} onPress={scrollToEvents}>
+            <Ionicons name="calendar" size={16} color="#FFFFFF" />
+            <Text style={styles.eventFabText}>Découvre notre prochain événement</Text>
+            <Ionicons name="chevron-down" size={16} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      ) : null}
 
       <Modal
         visible={!!bookingActivity}
@@ -1550,6 +1606,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  shareButton: {
+    position: "absolute",
+    right: 70,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
+    borderColor: Pastel.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   contentCard: {
     backgroundColor: Pastel.surface,
@@ -1560,8 +1629,21 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 48,
   },
-  venueHeaderBlock: { marginBottom: 16 },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  venueHeaderBlock: { marginBottom: 14 },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  venueAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Pastel.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  venueAvatarLetter: { fontSize: 26, fontFamily: Font.display, color: Pastel.primary, includeFontPadding: false },
+  metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 10 },
+  metaText: { fontSize: 14, fontFamily: Font.semiBold, color: Pastel.textMuted, includeFontPadding: false },
+  metaStatus: { flexDirection: "row", alignItems: "center", gap: 5 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   statusDotOpen: { backgroundColor: "#10B981" },
   statusDotClosed: { backgroundColor: "#9CA3AF" },
@@ -1571,43 +1653,68 @@ const styles = StyleSheet.create({
   statusMeta: { fontSize: 13, color: Pastel.textMuted, flex: 1, includeFontPadding: false },
   hoursLinkBtn: { flexDirection: "row", alignItems: "center", gap: 2, marginLeft: "auto" as any },
   hoursLinkText: { fontSize: 13, fontFamily: Font.semiBold, color: Pastel.text, includeFontPadding: false },
-  venueName: { fontSize: 30, fontFamily: Font.display, color: Pastel.text, letterSpacing: -0.5, marginBottom: 4, includeFontPadding: false },
+  venueName: { flex: 1, fontSize: 30, lineHeight: 34, fontFamily: Font.display, color: Pastel.text, letterSpacing: -0.5, includeFontPadding: false },
   venueCity: { fontSize: 14, color: Pastel.textMuted, fontFamily: Font.medium, includeFontPadding: false },
   venueDescription: { fontSize: 15, lineHeight: 23, color: Pastel.text, marginBottom: 16, includeFontPadding: false },
-  tagsScrollRow: { flexDirection: "row", gap: 8, paddingBottom: 4, marginBottom: 4 },
+  tagsWrapRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
   typeTagPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#EDE9FE",
+    backgroundColor: Pastel.primarySoft,
     borderWidth: 1,
-    borderColor: "#C4B5FD",
+    borderColor: "#B9CCEF",
   },
-  typeTagPillText: { fontSize: 13, fontFamily: Font.bold, color: "#6D28D9", includeFontPadding: false },
+  typeTagPillText: { fontSize: 13, fontFamily: Font.bold, color: Pastel.primary, includeFontPadding: false },
   ambianceTagPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#FEF3C7",
-    borderWidth: 1,
-    borderColor: "#FDE68A",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: Pastel.teal,
   },
-  ambianceTagPillText: { fontSize: 13, fontFamily: Font.semiBold, color: "#92400E", includeFontPadding: false },
-  actionsRow: { flexDirection: "row", gap: 10, marginTop: 20, marginBottom: 4 },
-  actionBtn: {
-    flex: 1,
+  ambianceTagPillText: { fontSize: 13, fontFamily: Font.bold, color: "#2F7D73", includeFontPadding: false },
+  /* Barre d'actions segmentée compacte (une seule ligne) */
+  actionBar: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 16,
     backgroundColor: Pastel.surfaceAlt,
-    borderWidth: 1,
-    borderColor: Pastel.border,
+    borderRadius: 16,
+    marginTop: 18,
+    paddingVertical: 13,
   },
-  actionBtnText: { fontSize: 12, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
-  actionBtnSocial: { backgroundColor: Pastel.primary, borderColor: Pastel.primary },
-  actionBtnSocialText: { color: "#FFFFFF" },
+  actionBarItem: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 4 },
+  actionBarLabel: { fontSize: 13, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
+  actionBarSep: { width: StyleSheet.hairlineWidth, height: 22, backgroundColor: Pastel.border },
+  /* Bouton flottant de découverte des événements */
+  eventFabWrap: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  eventFab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(36,45,65,0.82)",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  eventFabText: { fontSize: 14, fontFamily: Font.bold, color: "#FFFFFF", includeFontPadding: false },
+  perkHighlight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: Pastel.tealSoft,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  perkHighlightText: { flex: 1, fontSize: 14, fontFamily: Font.bold, color: "#2F7D73", includeFontPadding: false },
   sectionDivider: { height: 1, backgroundColor: Pastel.border, marginVertical: 24 },
   venueSection: { marginBottom: 28 },
   sectionHeaderRow: {
@@ -1616,7 +1723,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
-  sectionHeaderTitle: { fontSize: 19, fontFamily: Font.extraBold, color: Pastel.text, includeFontPadding: false },
+  sectionHeaderTitle: { fontSize: 24, lineHeight: 28, fontFamily: Font.display, color: Pastel.text, letterSpacing: 0.3, includeFontPadding: false },
   sectionBadge: {
     backgroundColor: Pastel.surfaceAlt,
     borderRadius: 99,
@@ -1638,25 +1745,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: Pastel.surfaceAlt,
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: Pastel.border,
   },
-  serviceTagPillText: { fontSize: 12, fontFamily: Font.semiBold, color: "#166534", includeFontPadding: false },
+  serviceTagPillText: { fontSize: 12, fontFamily: Font.semiBold, color: Pastel.primary, includeFontPadding: false },
   infosModalCard: { gap: 0 },
-  premiumPill: {
-    marginLeft: "auto" as any,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: "#FDE68A",
-  },
-  premiumPillText: { fontSize: 12, fontFamily: Font.bold, color: "#92400E", includeFontPadding: false },
   perksPreviewCard: { gap: 0 },
   perksPreviewSubtitle: { fontSize: 14, color: Pastel.textMuted, lineHeight: 20, marginBottom: 16, includeFontPadding: false },
   perkPreviewDivider: { height: 1, backgroundColor: Pastel.border, marginVertical: 8 },
@@ -1702,48 +1796,47 @@ const styles = StyleSheet.create({
   /* Nouvelle grille activités */
   activityCardsRow: { gap: 12, paddingRight: 20, paddingBottom: 4 },
   activityCardNew: {
-    width: 148,
+    width: 150,
     paddingVertical: 20,
     paddingHorizontal: 12,
-    borderRadius: 22,
-    backgroundColor: Pastel.background,
-    borderWidth: 1,
-    borderColor: Pastel.border,
+    borderRadius: 24,
+    backgroundColor: Pastel.primary,
     alignItems: "center",
     gap: 6,
   },
-  activityCardNewBookable: {
-    backgroundColor: Pastel.primary,
-    borderColor: Pastel.primary,
-  },
-  activityCardEmojiLarge: { fontSize: 48, lineHeight: 58, includeFontPadding: false },
+  activityCardEmojiLarge: { fontSize: 46, lineHeight: 56, includeFontPadding: false },
   activityCardNameNew: {
     fontSize: 14,
     fontFamily: Font.extraBold,
-    color: Pastel.text,
+    color: "#FFFFFF",
     textAlign: "center",
     includeFontPadding: false,
   },
   activityCardQuantityText: {
     fontSize: 12,
     fontFamily: Font.semiBold,
-    color: Pastel.textMuted,
+    color: "rgba(255,255,255,0.6)",
     textAlign: "center",
     includeFontPadding: false,
   },
   activityCardBookBadge: {
     marginTop: 6,
-    backgroundColor: "#F97316",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 999,
   },
-  activityCardBookBadgeText: { fontSize: 11, fontFamily: Font.extraBold, color: "#FFFFFF", includeFontPadding: false },
-  activityCardFreeBadge: {
+  activityCardBookBadgeText: { fontSize: 11, fontFamily: Font.extraBold, color: Pastel.primary, includeFontPadding: false },
+  activityOnSite: {
     marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  activityOnSiteText: {
     fontSize: 11,
     fontFamily: Font.semiBold,
-    color: Pastel.textMuted,
+    color: "rgba(255,255,255,0.75)",
     includeFontPadding: false,
   },
 
@@ -1766,13 +1859,13 @@ const styles = StyleSheet.create({
   },
   eventCardNextBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#F97316",
+    backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 3,
     marginBottom: 4,
   },
-  eventCardNextBadgeText: { fontSize: 11, fontFamily: Font.extraBold, color: "#FFFFFF", includeFontPadding: false },
+  eventCardNextBadgeText: { fontSize: 11, fontFamily: Font.extraBold, color: Pastel.primary, includeFontPadding: false },
   eventCardDateNew: { fontSize: 11, fontFamily: Font.semiBold, color: "rgba(255,255,255,0.75)", includeFontPadding: false },
   eventCardTitleNew: { fontSize: 14, fontFamily: Font.extraBold, color: "#FFFFFF", lineHeight: 19, includeFontPadding: false },
 

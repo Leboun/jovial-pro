@@ -142,11 +142,11 @@ export default function PremiumScreen() {
               </View>
               <View style={[styles.tableCell, styles.tableCellPlus]}>
                 {f.plus === true ? (
-                  <Ionicons name="checkmark" size={15} color={Pastel.orange} />
+                  <Ionicons name="checkmark" size={15} color={Pastel.teal} />
                 ) : f.plus === false ? (
                   <Text style={styles.tableDash}>—</Text>
                 ) : (
-                  <Text style={[styles.tableValue, { color: Pastel.orange, fontFamily: Font.bold }]}>{f.plus}</Text>
+                  <Text style={[styles.tableValue, { color: Pastel.teal, fontFamily: Font.bold }]}>{f.plus}</Text>
                 )}
               </View>
             </View>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   planBtnActive: { backgroundColor: "#FFFFFF" },
   planBtnText: { color: "rgba(255,255,255,0.65)", fontFamily: Font.bold, fontSize: 13, includeFontPadding: false },
   planBtnTextActive: { color: Pastel.text, fontFamily: Font.bold, includeFontPadding: false },
-  savingBadge: { backgroundColor: Pastel.orange, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  savingBadge: { backgroundColor: Pastel.teal, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   savingBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: Font.extraBold, includeFontPadding: false },
 
   priceBlock: { alignItems: "center", marginTop: 4 },
@@ -224,11 +224,11 @@ const styles = StyleSheet.create({
   alreadyPremiumText: { color: "#065F46", fontFamily: Font.bold, fontSize: 14, includeFontPadding: false },
 
   cta: {
-    backgroundColor: Pastel.orange,
+    backgroundColor: Pastel.teal,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
-    shadowColor: Pastel.orange,
+    shadowColor: Pastel.teal,
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Pastel.border,
   },
   tableColLabel: { width: 56, textAlign: "center", fontSize: 12, fontFamily: Font.bold, color: Pastel.textMuted, includeFontPadding: false },
-  tableColPlus: { color: Pastel.orange },
+  tableColPlus: { color: Pastel.teal },
   tableRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 14 },
   tableRowAlt: { backgroundColor: Pastel.background },
   tableFeature: { flex: 1, fontSize: 13, color: Pastel.text, lineHeight: 17, fontFamily: Font.regular, includeFontPadding: false },

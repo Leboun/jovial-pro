@@ -249,7 +249,7 @@ export default function PublicProfileScreen() {
         <View style={styles.sectionHeader}>
           <Ionicons name="heart-outline" size={16} color={Pastel.text} />
           <Text style={styles.sectionTitle}>Lieux favoris de {firstName}</Text>
-          {isPremium ? null : <View style={styles.lockBadge}><Ionicons name="lock-closed" size={11} color={Pastel.orange} /></View>}
+          {isPremium ? null : <View style={styles.lockBadge}><Ionicons name="lock-closed" size={11} color={Pastel.teal} /></View>}
         </View>
 
         {isPremium ? (
@@ -296,7 +296,7 @@ export default function PublicProfileScreen() {
         <View style={styles.sectionHeader}>
           <Ionicons name="calendar-outline" size={16} color={Pastel.text} />
           <Text style={styles.sectionTitle}>Agenda de {firstName}</Text>
-          {isPremium ? null : <View style={styles.lockBadge}><Ionicons name="lock-closed" size={11} color={Pastel.orange} /></View>}
+          {isPremium ? null : <View style={styles.lockBadge}><Ionicons name="lock-closed" size={11} color={Pastel.teal} /></View>}
         </View>
 
         {isPremium ? (
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", gap: 4,
     backgroundColor: "rgba(255,255,255,0.85)",
   },
-  premiumGateBadge: { color: Pastel.orange, fontSize: 10, fontFamily: Font.extraBold, letterSpacing: 1.5, includeFontPadding: false },
+  premiumGateBadge: { color: Pastel.teal, fontSize: 10, fontFamily: Font.extraBold, letterSpacing: 1.5, includeFontPadding: false },
   premiumGateTitle: { color: Pastel.text, fontSize: 14, fontFamily: Font.extraBold, includeFontPadding: false },
   premiumGateSub: { color: Pastel.textMuted, fontSize: 12, textAlign: "center", paddingHorizontal: 20, includeFontPadding: false },
   premiumGateBtn: {

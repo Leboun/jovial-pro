@@ -979,9 +979,9 @@ export default function ProfileScreen() {
         </Pressable>
       ) : (
         <Pressable style={styles.premiumBannerActive} onPress={() => router.push("/premium" as any)}>
-          <Ionicons name="checkmark-circle" size={18} color={Pastel.orange} />
+          <Ionicons name="checkmark-circle" size={18} color={Pastel.teal} />
           <Text style={styles.premiumBannerActiveText}>Abonné Jovial+ ✦</Text>
-          <Ionicons name="chevron-forward" size={14} color={Pastel.orange} style={{ marginLeft: "auto" }} />
+          <Ionicons name="chevron-forward" size={14} color={Pastel.teal} style={{ marginLeft: "auto" }} />
         </Pressable>
       )}
 
@@ -1014,8 +1014,8 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable style={styles.settingsRow} onPress={handleSuggestVenue}>
-          <View style={[styles.settingsIcon, { backgroundColor: "#FFF7ED" }]}>
-            <Ionicons name="storefront-outline" size={18} color={Pastel.orange} />
+          <View style={[styles.settingsIcon, { backgroundColor: Pastel.tealSoft }]}>
+            <Ionicons name="storefront-outline" size={18} color={Pastel.teal} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.settingsRowText}>Proposer un établissement</Text>
@@ -1164,7 +1164,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: Pastel.orange,
+    backgroundColor: Pastel.primary,
   },
   heroPrimaryBtnText: { color: "#FFFFFF", fontFamily: Font.bold, fontSize: 13, includeFontPadding: false },
   heroIconBtn: {
@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
   completionLabel: { fontSize: 12, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
   completionScore: { fontSize: 12, fontFamily: Font.bold, color: Pastel.primary, includeFontPadding: false },
   progressTrack: { height: 5, borderRadius: 999, backgroundColor: Pastel.surfaceAlt },
-  progressFill: { height: "100%", borderRadius: 999, backgroundColor: Pastel.orange },
+  progressFill: { height: "100%", borderRadius: 999, backgroundColor: Pastel.primary },
   completionHint: { fontSize: 11, color: Pastel.textMuted, fontFamily: Font.regular, includeFontPadding: false },
 
   /* ── EDIT FORM ── */
@@ -1333,10 +1333,10 @@ const styles = StyleSheet.create({
     backgroundColor: Pastel.primary,
   },
   followBtnActive: { backgroundColor: Pastel.surfaceAlt, borderColor: Pastel.border },
-  followBtnPending: { backgroundColor: "#FFF7ED", borderColor: "#F97316" },
+  followBtnPending: { backgroundColor: Pastel.tealSoft, borderColor: Pastel.teal },
   followBtnText: { color: "#FFFFFF", fontSize: 12, fontFamily: Font.bold, includeFontPadding: false },
   followBtnTextActive: { color: Pastel.textMuted, fontFamily: Font.regular, includeFontPadding: false },
-  followBtnTextPending: { color: "#F97316", fontFamily: Font.regular, includeFontPadding: false },
+  followBtnTextPending: { color: "#2F7D73", fontFamily: Font.regular, includeFontPadding: false },
 
   premiumBanner: {
     marginHorizontal: 16,

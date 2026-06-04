@@ -185,8 +185,8 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="bug-outline"
-            iconBg="#FFF7ED"
-            iconColor="#F97316"
+            iconBg="#D8F0EE"
+            iconColor="#2F7D73"
             label="Signaler un problème"
             onPress={() => {
               const subject = encodeURIComponent("Signalement d'un problème");
