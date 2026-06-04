@@ -2072,8 +2072,8 @@ export default function ExploreScreen() {
                       onChangeText={setCityQuery}
                       placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
-                      selectionColor="#1D4ED8"
-                      cursorColor="#1D4ED8"
+                      selectionColor="#2B4E93"
+                      cursorColor="#2B4E93"
                       style={styles.searchModalInputCompact}
                       onPressIn={(event) => event.stopPropagation()}
                     />
@@ -2257,7 +2257,7 @@ export default function ExploreScreen() {
                 closeVenueSearch();
               }}
             >
-              <Ionicons name="search" size={16} color="#7A3E00" />
+              <Ionicons name="search" size={16} color="#FFFFFF" />
               <Text style={styles.searchModalActionText}>Rechercher</Text>
             </Pressable>
           </ScrollView>
@@ -2310,8 +2310,8 @@ export default function ExploreScreen() {
                       onChangeText={setCityQuery}
                       placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
-                      selectionColor="#1D4ED8"
-                      cursorColor="#1D4ED8"
+                      selectionColor="#2B4E93"
+                      cursorColor="#2B4E93"
                       style={styles.searchModalInputCompact}
                       onPressIn={(event) => event.stopPropagation()}
                     />
@@ -2434,7 +2434,7 @@ export default function ExploreScreen() {
                 closeActivitySearch();
               }}
             >
-              <Ionicons name="search" size={16} color="#7A3E00" />
+              <Ionicons name="search" size={16} color="#FFFFFF" />
               <Text style={styles.searchModalActionText}>Rechercher</Text>
             </Pressable>
           </ScrollView>
@@ -2481,8 +2481,8 @@ export default function ExploreScreen() {
                       onChangeText={setCityQuery}
                       placeholder="Ville ou établissement"
                       placeholderTextColor={Pastel.textMuted}
-                      selectionColor="#1D4ED8"
-                      cursorColor="#1D4ED8"
+                      selectionColor="#2B4E93"
+                      cursorColor="#2B4E93"
                       style={styles.searchModalInputCompact}
                       onPressIn={(event) => event.stopPropagation()}
                     />
@@ -2592,7 +2592,7 @@ export default function ExploreScreen() {
                         goPrevMonth();
                       }}
                     >
-                      <Ionicons name="chevron-back" size={16} color="#1D4ED8" />
+                      <Ionicons name="chevron-back" size={16} color="#2B4E93" />
                     </Pressable>
                     <Text style={styles.calendarTitle}>{calendarMonthLabel}</Text>
                     <Pressable
@@ -2602,7 +2602,7 @@ export default function ExploreScreen() {
                         goNextMonth();
                       }}
                     >
-                      <Ionicons name="chevron-forward" size={16} color="#1D4ED8" />
+                      <Ionicons name="chevron-forward" size={16} color="#2B4E93" />
                     </Pressable>
                   </View>
                   <View style={styles.calendarWeekdays}>
@@ -2661,7 +2661,7 @@ export default function ExploreScreen() {
                 closeEventSearch();
               }}
             >
-              <Ionicons name="search" size={16} color="#7A3E00" />
+              <Ionicons name="search" size={16} color="#FFFFFF" />
               <Text style={styles.searchModalActionText}>Rechercher</Text>
             </Pressable>
           </ScrollView>
@@ -3452,30 +3452,30 @@ const styles = StyleSheet.create({
     backgroundColor: Pastel.surfaceAlt,
   },
   searchModalChipActive: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#D6E0F5",
     borderWidth: 1,
-    borderColor: "#93C5FD",
+    borderColor: "#B9CCEF",
   },
   searchModalChipText: { fontSize: 12, color: Pastel.text, fontFamily: Font.semiBold, includeFontPadding: false },
-  searchModalChipTextActive: { color: "#1D4ED8", fontFamily: Font.bold, includeFontPadding: false },
+  searchModalChipTextActive: { color: "#2B4E93", fontFamily: Font.bold, includeFontPadding: false },
   searchModalChipMore: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#D6E0F5",
     borderWidth: 1,
-    borderColor: "#60A5FA",
+    borderColor: "#B9CCEF",
   },
   searchModalChipMoreCompact: {
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#D6E0F5",
     borderWidth: 1,
-    borderColor: "#60A5FA",
+    borderColor: "#B9CCEF",
   },
-  searchModalChipMoreText: { fontSize: 12, color: "#1D4ED8", fontFamily: Font.bold, includeFontPadding: false },
+  searchModalChipMoreText: { fontSize: 12, color: "#2B4E93", fontFamily: Font.bold, includeFontPadding: false },
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -3519,13 +3519,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
   },
   calendarDayToday: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "#D6E0F5",
     borderWidth: 1,
-    borderColor: "#F59E0B",
+    borderColor: "#2B4E93",
   },
-  calendarDayActive: { backgroundColor: "#1D4ED8" },
+  calendarDayActive: { backgroundColor: "#2B4E93" },
   calendarDayText: { fontSize: 11, color: Pastel.text, fontFamily: Font.bold, includeFontPadding: false },
-  calendarDayTextToday: { color: "#92400E" },
+  calendarDayTextToday: { color: "#2B4E93" },
   calendarDayTextActive: { color: "#FFFFFF" },
   searchModalCityList: { gap: 6 },
   searchModalCityRow: { paddingVertical: 6, paddingHorizontal: 6 },
@@ -3538,14 +3538,14 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#2B4E93",
     shadowColor: "#0B0B12",
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  searchModalActionText: { color: "#7A3E00", fontSize: 14, fontFamily: Font.bold, includeFontPadding: false },
+  searchModalActionText: { color: "#FFFFFF", fontSize: 14, fontFamily: Font.bold, includeFontPadding: false },
   intentTabsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -3613,7 +3613,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
   },
   searchClear: {
     width: 32,
@@ -3647,7 +3647,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#1D4ED8",
+    backgroundColor: "#2B4E93",
   },
   moreButtonText: { fontSize: 12, fontFamily: Font.bold, color: "#FFFFFF", includeFontPadding: false },
   intentRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
@@ -3660,11 +3660,11 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   intentChipActive: {
-    backgroundColor: "#DBEAFE",
-    borderColor: "#DBEAFE",
+    backgroundColor: "#D6E0F5",
+    borderColor: "#D6E0F5",
   },
   intentText: { fontSize: 12, color: "#0B0B12", fontFamily: Font.bold, includeFontPadding: false },
-  intentTextActive: { color: "#1D4ED8" },
+  intentTextActive: { color: "#2B4E93" },
   filterRow: { gap: 8 },
   filterScroll: { gap: 8 },
   filterChip: {
@@ -3674,10 +3674,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   filterChipActive: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#D6E0F5",
   },
   filterText: { fontSize: 12, color: "#64748B", fontFamily: Font.semiBold, includeFontPadding: false },
-  filterTextActive: { color: "#1D4ED8" },
+  filterTextActive: { color: "#2B4E93" },
   chipsRow: { gap: 8, paddingVertical: 2 },
   chip: {
     paddingHorizontal: 12,
@@ -3686,10 +3686,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   chipActive: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "#D6E0F5",
   },
   chipText: { fontSize: 12, color: "#64748B", fontFamily: Font.semiBold, includeFontPadding: false },
-  chipTextActive: { color: "#92400E" },
+  chipTextActive: { color: "#2B4E93" },
   loadingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   sectionCard: {
     padding: 0,
@@ -3714,7 +3714,7 @@ const styles = StyleSheet.create({
   activityHeroEyebrow: {
     fontSize: 11,
     fontFamily: Font.extraBold,
-    color: "#1D4ED8",
+    color: "#2B4E93",
     textTransform: "uppercase",
     letterSpacing: 0.8,
     includeFontPadding: false,
@@ -3739,12 +3739,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
   },
   activityHeroActionText: {
     fontSize: 12,
     fontFamily: Font.bold,
-    color: "#7A3E00",
+    color: "#2B4E93",
     includeFontPadding: false,
   },
   activityQuickRow: {
@@ -3763,8 +3763,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   activityQuickChipActive: {
-    backgroundColor: "#1D4ED8",
-    borderColor: "#1D4ED8",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
   },
   activityQuickChipText: {
     fontSize: 12,
@@ -3792,7 +3792,7 @@ const styles = StyleSheet.create({
   discoveryHeroEyebrow: {
     fontSize: 11,
     fontFamily: Font.extraBold,
-    color: "#1D4ED8",
+    color: "#2B4E93",
     textTransform: "uppercase",
     letterSpacing: 0.8,
     includeFontPadding: false,
@@ -3817,12 +3817,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
   },
   discoveryHeroActionText: {
     fontSize: 12,
     fontFamily: Font.bold,
-    color: "#7A3E00",
+    color: "#2B4E93",
     includeFontPadding: false,
   },
   discoveryQuickRow: {
@@ -3841,8 +3841,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   discoveryQuickChipActive: {
-    backgroundColor: "#1D4ED8",
-    borderColor: "#1D4ED8",
+    backgroundColor: "#2B4E93",
+    borderColor: "#2B4E93",
   },
   discoveryQuickChipText: {
     fontSize: 12,
@@ -3902,7 +3902,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
   },
   activityFocusBadge: {
     position: "absolute",
@@ -3934,7 +3934,7 @@ const styles = StyleSheet.create({
     fontFamily: Font.bold,
     includeFontPadding: false,
   },
-  newBadgeText: { color: "#92400E", fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
+  newBadgeText: { color: "#2B4E93", fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
   placeTop: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
   placeName: { fontSize: 14, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
   placeMeta: { fontSize: 12, color: Pastel.textMuted, includeFontPadding: false },
@@ -3989,9 +3989,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "#D6E0F5",
   },
-  tagTextAlt: { fontSize: 11, color: "#92400E", fontFamily: Font.semiBold, includeFontPadding: false },
+  tagTextAlt: { fontSize: 11, color: "#2B4E93", fontFamily: Font.semiBold, includeFontPadding: false },
   placeActions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -4022,7 +4022,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1D4ED8",
+    backgroundColor: "#2B4E93",
   },
   placeActionPrimaryText: { color: "#F8FAFC", fontSize: 12, fontFamily: Font.extraBold, includeFontPadding: false },
   placeActionSecondary: {
@@ -4131,9 +4131,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
   },
-  eventTimeText: { fontSize: 11, color: "#92400E", fontFamily: Font.bold, includeFontPadding: false },
+  eventTimeText: { fontSize: 11, color: "#2B4E93", fontFamily: Font.bold, includeFontPadding: false },
   resultRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -4157,7 +4157,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: "#FDE68A",
+    backgroundColor: "#D6E0F5",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -4275,14 +4275,14 @@ const styles = StyleSheet.create({
   suggestionBanner: {
     padding: 14,
     borderRadius: 14,
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#D6E0F5",
     borderWidth: 1,
-    borderColor: "#FED7AA",
+    borderColor: "#B9CCEF",
   },
   suggestionBannerText: {
     fontSize: 14,
     fontFamily: Font.semiBold,
-    color: "#92400E",
+    color: "#2B4E93",
     includeFontPadding: false,
   },
 
