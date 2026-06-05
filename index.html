@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Jovial</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
@@ -23,35 +23,7 @@
         flex: 1;
       }
     </style>
-  <link rel="icon" href="/favicon.ico" />  <meta name="theme-color" content="#F2EDE4" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <style id="jovial-statusbar">
-    /*
-     * black-translucent : le viewport couvre tout l'ecran (y compris sous la barre systeme).
-     * env(safe-area-inset-top) = hauteur exacte de la barre (47-59px selon iPhone).
-     * body::before cree un bandeau beige fixe qui se glisse derriere la barre transparente.
-     * #root est pousse vers le bas pour que le contenu commence sous le bandeau.
-     */
-    html, body {
-      background-color: #F2EDE4;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: env(safe-area-inset-top);
-      background-color: #F2EDE4;
-      z-index: 999999;
-    }
-    #root {
-      padding-top: env(safe-area-inset-top);
-      background-color: #ffffff;
-      box-sizing: border-box;
-    }
-  </style></head>
+  <link rel="icon" href="/favicon.ico" /></head>
 
   <body>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
@@ -60,6 +32,6 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/_expo/static/js/web/entry-de80d3bf6d5934b653c7bc577273be99.js" defer></script>
+  <script src="/_expo/static/js/web/entry-3749364d1da2b8d375da3a89b11064d0.js" defer></script>
 </body>
 </html>
