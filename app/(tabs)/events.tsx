@@ -232,7 +232,7 @@ export default function EventsScreen() {
                 <Ionicons
                   name={cat.icon}
                   size={13}
-                  color={active ? "#111827" : "#9CA3AF"}
+                  color={active ? "#2B4E93" : "#9CA3AF"}
                 />
                 <Text style={[styles.filterText, active && styles.filterTextActive]}>
                   {cat.label}
@@ -246,7 +246,7 @@ export default function EventsScreen() {
       {/* Contenu */}
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={"#111827"} size="large" />
+          <ActivityIndicator color={"#2B4E93"} size="large" />
           <Text style={styles.loadingText}>Chargement des événements...</Text>
         </View>
       ) : error ? (
@@ -289,7 +289,7 @@ export default function EventsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => fetchEvents(true)}
-              tintColor={"#111827"}
+              tintColor={"#2B4E93"}
             />
           }
         >
@@ -422,8 +422,8 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   filterChipActive: {
-    backgroundColor: "#F3F4F6",
-    borderColor: "#111827",
+    backgroundColor: "#D6E0F5",
+    borderColor: "#2B4E93",
   },
   filterText: {
     fontSize: 12,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   filterTextActive: {
-    color: "#111827",
+    color: "#2B4E93",
   },
   center: {
     flex: 1,
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   },
   retryBtn: {
     marginTop: 4,
-    backgroundColor: "#111827",
+    backgroundColor: "#2B4E93",
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingVertical: 11,

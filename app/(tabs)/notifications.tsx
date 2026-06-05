@@ -40,13 +40,13 @@ function timeAgo(iso: string) {
 function notifIcon(type: string): { name: string; color: string; bg: string } {
   switch (type) {
     case "message":
-      return { name: "chatbubbles-outline", color: "#3B82F6", bg: "#EFF6FF" };
+      return { name: "chatbubbles-outline", color: "#2B4E93", bg: "#D6E0F5" };
     case "group_post":
-      return { name: "people-outline", color: "#8B5CF6", bg: "#F5F3FF" };
+      return { name: "people-outline", color: "#2B4E93", bg: "#D6E0F5" };
     case "group_comment":
-      return { name: "chatbubble-outline", color: "#10B981", bg: "#F0FDF4" };
+      return { name: "chatbubble-outline", color: "#2B4E93", bg: "#D6E0F5" };
     case "event":
-      return { name: "calendar-outline", color: "#F59E0B", bg: "#FFFBEB" };
+      return { name: "calendar-outline", color: "#2F7D73", bg: "#D8F0EE" };
     default:
       return { name: "notifications-outline", color: Pastel.textMuted, bg: Pastel.surfaceAlt };
   }

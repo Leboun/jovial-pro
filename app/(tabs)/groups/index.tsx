@@ -353,7 +353,7 @@ export default function GroupsScreen() {
             <View style={styles.actionsSection}>
               <Pressable style={styles.actionCard} onPress={() => router.push("/groups/new")}>
                 <View style={[styles.actionIcon, { backgroundColor: "#EEF2FF" }]}>
-                  <Ionicons name="add-circle-outline" size={24} color="#6366F1" />
+                  <Ionicons name="add-circle-outline" size={24} color="#2B4E93" />
                 </View>
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Créer un club</Text>
@@ -363,8 +363,8 @@ export default function GroupsScreen() {
               </Pressable>
 
               <Pressable style={styles.actionCard} onPress={() => router.push("/groups/join")}>
-                <View style={[styles.actionIcon, { backgroundColor: "#F0FDF4" }]}>
-                  <Ionicons name="link-outline" size={24} color="#10B981" />
+                <View style={[styles.actionIcon, { backgroundColor: "#D8F0EE" }]}>
+                  <Ionicons name="link-outline" size={24} color="#2F7D73" />
                 </View>
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Rejoindre via un lien</Text>
@@ -374,8 +374,8 @@ export default function GroupsScreen() {
               </Pressable>
 
               <Pressable style={styles.actionCard} onPress={() => router.push("/groups/search")}>
-                <View style={[styles.actionIcon, { backgroundColor: "#FFF7ED" }]}>
-                  <Ionicons name="search-outline" size={24} color="#F59E0B" />
+                <View style={[styles.actionIcon, { backgroundColor: "#D6E0F5" }]}>
+                  <Ionicons name="search-outline" size={24} color="#2B4E93" />
                 </View>
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Rechercher un club</Text>
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  listTagPillText: { fontSize: 11, fontFamily: Font.bold, color: "#6366F1", includeFontPadding: false },
+  listTagPillText: { fontSize: 11, fontFamily: Font.bold, color: "#2B4E93", includeFontPadding: false },
   listCityRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   listCityText: { fontSize: 11, color: Pastel.textMuted, flexShrink: 1, fontFamily: Font.regular, includeFontPadding: false },
 
