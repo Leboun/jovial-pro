@@ -1090,20 +1090,20 @@ export default function VenueScreen() {
 
         <View style={styles.contentCard} onLayout={(e) => { contentCardY.current = e.nativeEvent.layout.y; }}>
 
+          {/* Logo — chevauche la couverture, style Club */}
+          <View style={styles.venueLogo}>
+            {venue.logo_url && isHttpUrlString(venue.logo_url) ? (
+              <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="cover" transition={150} />
+            ) : (
+              <Text style={styles.venueLogoLetter}>
+                {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
+              </Text>
+            )}
+          </View>
+
           {/* Identité du lieu */}
           <View style={styles.venueHeaderBlock}>
-            <View style={styles.identityRow}>
-              <View style={styles.venueAvatar}>
-                {venue.logo_url && isHttpUrlString(venue.logo_url) ? (
-                  <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="cover" transition={150} />
-                ) : (
-                  <Text style={styles.venueAvatarLetter}>
-                    {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
-                  </Text>
-                )}
-              </View>
-              <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
-            </View>
+            <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
             <View style={styles.metaRow}>
               {(venue.venue_type || venue.city) ? (
                 <Text style={styles.metaText}>
@@ -1636,17 +1636,25 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   venueHeaderBlock: { marginBottom: 14 },
-  identityRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  venueAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  venueLogo: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: Pastel.background,
     backgroundColor: Pastel.primarySoft,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    marginTop: -60,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-  venueAvatarLetter: { fontSize: 26, fontFamily: Font.display, color: Pastel.primary, includeFontPadding: false },
+  venueLogoLetter: { fontSize: 34, fontFamily: Font.display, color: Pastel.primary, includeFontPadding: false },
   venueAvatarImg: { width: "100%", height: "100%" },
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 10 },
   metaText: { fontSize: 14, fontFamily: Font.semiBold, color: Pastel.textMuted, includeFontPadding: false },
@@ -1660,7 +1668,7 @@ const styles = StyleSheet.create({
   statusMeta: { fontSize: 13, color: Pastel.textMuted, flex: 1, includeFontPadding: false },
   hoursLinkBtn: { flexDirection: "row", alignItems: "center", gap: 2, marginLeft: "auto" as any },
   hoursLinkText: { fontSize: 13, fontFamily: Font.semiBold, color: Pastel.text, includeFontPadding: false },
-  venueName: { flex: 1, fontSize: 30, lineHeight: 34, fontFamily: Font.display, color: Pastel.text, letterSpacing: -0.5, includeFontPadding: false },
+  venueName: { fontSize: 30, lineHeight: 34, fontFamily: Font.display, color: Pastel.text, letterSpacing: -0.5, includeFontPadding: false },
   venueCity: { fontSize: 14, color: Pastel.textMuted, fontFamily: Font.medium, includeFontPadding: false },
   venueDescription: { fontSize: 15, lineHeight: 23, color: Pastel.text, marginBottom: 16, includeFontPadding: false },
   tagsWrapRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
