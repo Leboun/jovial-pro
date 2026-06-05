@@ -64,6 +64,7 @@ type Venue = {
   social_url: string | null;
 
   cover_url: string | null;
+  logo_url: string | null;
   photos: string[] | null;
   lat: number | null;
   lng: number | null;
@@ -308,6 +309,7 @@ export default function VenueScreen() {
             social_platform: demoVenue.social_platform,
             social_url: demoVenue.social_url,
             cover_url: demoVenue.cover_url,
+            logo_url: null,
             photos: demoVenue.photos,
             lat: demoVenue.lat,
             lng: demoVenue.lng,
@@ -335,7 +337,7 @@ export default function VenueScreen() {
       const { data, error } = await supabase
         .from("venues")
         .select(
-          "id, name, city, address, postcode, contact, description, venue_type, venue_ambiance, service_tags, lat, lng, cover_url, photos, social_platform, social_url, opening_hours, timezone"
+          "id, name, city, address, postcode, contact, description, venue_type, venue_ambiance, service_tags, lat, lng, cover_url, logo_url, photos, social_platform, social_url, opening_hours, timezone"
         )
         .eq("id", numericId)
         .maybeSingle();
@@ -1092,9 +1094,13 @@ export default function VenueScreen() {
           <View style={styles.venueHeaderBlock}>
             <View style={styles.identityRow}>
               <View style={styles.venueAvatar}>
-                <Text style={styles.venueAvatarLetter}>
-                  {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
-                </Text>
+                {venue.logo_url && isHttpUrlString(venue.logo_url) ? (
+                  <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="cover" transition={150} />
+                ) : (
+                  <Text style={styles.venueAvatarLetter}>
+                    {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
+                  </Text>
+                )}
               </View>
               <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
             </View>
@@ -1641,6 +1647,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   venueAvatarLetter: { fontSize: 26, fontFamily: Font.display, color: Pastel.primary, includeFontPadding: false },
+  venueAvatarImg: { width: "100%", height: "100%" },
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 10 },
   metaText: { fontSize: 14, fontFamily: Font.semiBold, color: Pastel.textMuted, includeFontPadding: false },
   metaStatus: { flexDirection: "row", alignItems: "center", gap: 5 },

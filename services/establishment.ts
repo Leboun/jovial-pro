@@ -23,6 +23,7 @@ export type EstablishmentProfile = {
   social_platform: "instagram" | "facebook" | null;
   social_url: string | null;
   cover_url: string | null;
+  logo_url: string | null;
   photos: string[] | null;
   opening_hours: Record<string, { open: string; close: string }[]> | null;
   timezone: string | null;
@@ -108,7 +109,7 @@ let previewEstablishment: EstablishmentProfile | null = null;
 let previewEvents: EstablishmentEvent[] = [];
 let previewSubscription: EstablishmentSubscription | null = null;
 const ESTABLISHMENT_SELECT =
-  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, darts_targets_count, lat, lng";
+  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, logo_url, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, darts_targets_count, lat, lng";
 const SUBSCRIPTION_SELECT =
   "id, venue_id, plan, status, current_period_end, events_quota_year, events_used_year, tournaments_used_year, boosts_used_year, local_spotlight_used_year, targeted_notifications_used_year, stripe_customer_id, stripe_subscription_id, stripe_price_id";
 
@@ -137,6 +138,7 @@ const ensurePreviewState = (userId: string) => {
       social_platform: "facebook",
       social_url: "https://facebook.com/jovial.app",
       cover_url: null,
+      logo_url: null,
       photos: [],
       opening_hours: {
         thu: [{ open: "18:00", close: "01:00" }],
@@ -550,6 +552,17 @@ export async function setProfileRole(userId: string, role: "user" | "establishme
 
   if (insertError) throw insertError;
   return inserted as { user_id: string; role: "user" | "establishment" } | null;
+}
+
+export type EventCategory = { id: number; name: string };
+
+export async function fetchEventCategories(): Promise<EventCategory[]> {
+  const { data, error } = await supabase
+    .from("event_categories")
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as EventCategory[];
 }
 
 export async function listMyEvents(venueId: number) {

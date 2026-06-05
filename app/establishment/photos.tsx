@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,10 +15,13 @@ import {
   uploadImage,
 } from "@/services/establishment";
 import { ensureEstablishmentFeatureAccess } from "@/utils/establishmentProGate";
+import { Pastel } from "@/constants/pastel";
+import { Font } from "@/constants/typography";
 
 const FALLBACK_IMAGE = require("../../assets/images/welcome-hero.png");
 const PHOTO_BUCKET = "establishment-media";
 const MAX_PHOTOS = 10;
+const MIN_RECOMMENDED = 3;
 
 export default function EstablishmentPhotosScreen() {
   const router = useRouter();
@@ -74,6 +77,13 @@ export default function EstablishmentPhotosScreen() {
 
   const previewPhoto = useMemo(() => photos[0] ?? profile?.cover_url ?? null, [photos, profile?.cover_url]);
 
+  const progressLabel = useMemo(() => {
+    if (photos.length === 0) return "Ajoute au moins 3 photos pour apparaître sur la carte Jovial.";
+    if (photos.length < MIN_RECOMMENDED) return `Plus que ${MIN_RECOMMENDED - photos.length} photo${MIN_RECOMMENDED - photos.length > 1 ? "s" : ""} pour atteindre le minimum recommandé.`;
+    if (photos.length < MAX_PHOTOS) return `Bonne base ! Tu peux aller jusqu'à ${MAX_PHOTOS} photos.`;
+    return "Galerie complète — tous les emplacements sont utilisés.";
+  }, [photos.length]);
+
   const persistPhotos = async (nextPhotos: string[]) => {
     if (!profile) return;
     setSaving(true);
@@ -96,41 +106,45 @@ export default function EstablishmentPhotosScreen() {
     }
   };
 
+  const handleUploadLogo = async () => {
+    if (!profile) return;
+    try {
+      const image = await pickAndPrepareImage({ targetWidth: 600, quality: 0.9 });
+      if (!image) return;
+      setSaving(true);
+      const path = `${profile.id}/logo/${Date.now()}.${image.extension}`;
+      const url = await uploadImage({ bucket: PHOTO_BUCKET, path, uri: image.uri, contentType: image.contentType });
+      const updated = await updateMyEstablishment(profile.id, { logo_url: url });
+      if (updated) { setProfile(updated); }
+      else { setProfile((current) => (current ? { ...current, logo_url: url } : current)); }
+    } catch (error) {
+      const message = typeof error === "object" && error && "message" in error ? String((error as { message: unknown }).message) : "Impossible d'ajouter le logo.";
+      Alert.alert("Erreur", message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAddPhoto = async () => {
     if (!profile) return;
     if (photos.length >= MAX_PHOTOS) {
-      Alert.alert("Limite atteinte", "Vous pouvez ajouter jusqu'à 10 photos maximum.");
+      Alert.alert("Limite atteinte", "Tu peux ajouter jusqu'à 10 photos maximum.");
       return;
     }
-
     try {
       const image = await pickAndPrepareImage({ targetWidth: 1800, quality: 0.88 });
       if (!image) return;
-
       setSaving(true);
       const path = `${profile.id}/photos/${Date.now()}.${image.extension}`;
-      const url = await uploadImage({
-        bucket: PHOTO_BUCKET,
-        path,
-        uri: image.uri,
-        contentType: image.contentType,
-      });
+      const url = await uploadImage({ bucket: PHOTO_BUCKET, path, uri: image.uri, contentType: image.contentType });
       const nextPhotos = [...photos, url];
-      const updated = await updateMyEstablishment(profile.id, {
-        photos: nextPhotos,
-        cover_url: nextPhotos[0] ?? null,
-      });
-      if (updated) {
-        setProfile(updated);
-      } else {
+      const updated = await updateMyEstablishment(profile.id, { photos: nextPhotos, cover_url: nextPhotos[0] ?? null });
+      if (updated) { setProfile(updated); } else {
         setProfile((current) => (current ? { ...current, photos: nextPhotos, cover_url: nextPhotos[0] ?? null } : current));
       }
       setPhotos(nextPhotos);
     } catch (error) {
-      const message =
-        typeof error === "object" && error && "message" in error
-          ? String((error as { message: unknown }).message)
-          : "Impossible d'ajouter cette photo.";
+      const message = typeof error === "object" && error && "message" in error ? String((error as { message: unknown }).message) : "Impossible d'ajouter cette photo.";
       Alert.alert("Erreur", message);
     } finally {
       setSaving(false);
@@ -139,28 +153,17 @@ export default function EstablishmentPhotosScreen() {
 
   const handleReplacePhoto = async (index: number) => {
     if (!profile || index < 0 || index >= photos.length) return;
-
     try {
       const image = await pickAndPrepareImage({ targetWidth: 1800, quality: 0.88 });
       if (!image) return;
-
       setSaving(true);
       const path = `${profile.id}/photos/${Date.now()}-${index}.${image.extension}`;
-      const url = await uploadImage({
-        bucket: PHOTO_BUCKET,
-        path,
-        uri: image.uri,
-        contentType: image.contentType,
-      });
-
+      const url = await uploadImage({ bucket: PHOTO_BUCKET, path, uri: image.uri, contentType: image.contentType });
       const nextPhotos = [...photos];
       nextPhotos[index] = url;
       await persistPhotos(nextPhotos);
     } catch (error) {
-      const message =
-        typeof error === "object" && error && "message" in error
-          ? String((error as { message: unknown }).message)
-          : "Impossible de remplacer cette photo.";
+      const message = typeof error === "object" && error && "message" in error ? String((error as { message: unknown }).message) : "Impossible de remplacer cette photo.";
       Alert.alert("Erreur", message);
     } finally {
       setSaving(false);
@@ -183,10 +186,6 @@ export default function EstablishmentPhotosScreen() {
     await persistPhotos(nextPhotos);
   };
 
-  const removePhoto = (photo: string) => {
-    setConfirmDeletePhoto(photo);
-  };
-
   const confirmDelete = async () => {
     if (!confirmDeletePhoto) return;
     const target = confirmDeletePhoto;
@@ -197,9 +196,9 @@ export default function EstablishmentPhotosScreen() {
   if (!userId) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>Connexion requise</Text>
-        <Pressable style={styles.primaryButton} onPress={() => router.push("/establishment/login")}>
-          <Text style={styles.primaryButtonText}>Se connecter</Text>
+        <Text style={styles.centerTitle}>Connexion requise</Text>
+        <Pressable style={styles.btnPrimary} onPress={() => router.push("/establishment/login")}>
+          <Text style={styles.btnPrimaryText}>Se connecter</Text>
         </Pressable>
       </View>
     );
@@ -209,327 +208,276 @@ export default function EstablishmentPhotosScreen() {
     <JovialProShell
       currentPath={pathname}
       title="Photos"
-      subtitle="Ajoutez jusqu'à 10 photos, organisez leur ordre et choisissez la preview en mettant la photo voulue en première position."
+      subtitle="Gère les visuels de ton établissement — la première photo est ta couverture principale."
       onRefresh={handleRefresh}
       refreshing={refreshing}
       loading={loading}
-      rightSlot={
-        <View style={styles.counterCard}>
-          <Text style={styles.counterValue}>{photos.length}/{MAX_PHOTOS}</Text>
-          <Text style={styles.counterLabel}>photos utilisées</Text>
-        </View>
-      }
     >
+      {/* Confirmation suppression */}
       {confirmDeletePhoto ? (
         <View style={styles.deleteConfirm}>
-          <Text style={styles.deleteConfirmText}>Supprimer cette photo ?</Text>
-          <Text style={styles.deleteConfirmHint}>Elle sera retirée de la fiche et de la preview si elle est en première position.</Text>
+          <View style={styles.deleteConfirmLeft}>
+            <Ionicons name="warning-outline" size={20} color="#BE123C" />
+            <View style={styles.deleteConfirmText}>
+              <Text style={styles.deleteConfirmTitle}>Supprimer cette photo ?</Text>
+              <Text style={styles.deleteConfirmHint}>Elle sera retirée de la fiche et de la couverture si c'est la première.</Text>
+            </View>
+          </View>
           <View style={styles.deleteConfirmRow}>
-            <Pressable style={styles.deleteConfirmCancel} onPress={() => setConfirmDeletePhoto(null)}>
-              <Text style={styles.deleteConfirmCancelText}>Annuler</Text>
+            <Pressable style={styles.deleteCancel} onPress={() => setConfirmDeletePhoto(null)}>
+              <Text style={styles.deleteCancelText}>Annuler</Text>
             </Pressable>
-            <Pressable style={styles.deleteConfirmOk} onPress={confirmDelete}>
-              <Text style={styles.deleteConfirmOkText}>Supprimer</Text>
+            <Pressable style={styles.deleteOk} onPress={confirmDelete}>
+              <Text style={styles.deleteOkText}>Supprimer</Text>
             </Pressable>
           </View>
         </View>
       ) : null}
 
-      <View style={styles.heroCard}>
-        <View style={styles.heroHeader}>
-          <View style={styles.heroText}>
-            <Text style={styles.cardTitle}>Photo de preview</Text>
-            <Text style={styles.cardText}>
-              La première photo de la liste est celle qui sera utilisée avant l'ouverture de la fiche et comme couverture principale.
-              Chaque import ouvre aussi l'outil de recadrage du téléphone.
+      {/* Barre de progression */}
+      <View style={styles.progressBlock}>
+        <View style={styles.progressHeader}>
+          <View style={styles.progressLeft}>
+            <Text style={styles.progressTitle}>
+              {photos.length === MAX_PHOTOS ? "✓ Galerie complète" : `${photos.length} / ${MAX_PHOTOS} photos`}
             </Text>
+            <Text style={styles.progressSub}>{progressLabel}</Text>
           </View>
           <Pressable
-            style={[styles.primaryButton, photos.length >= MAX_PHOTOS || saving ? styles.buttonDisabled : null]}
+            style={[styles.btnPrimary, (photos.length >= MAX_PHOTOS || saving) && styles.btnDisabled]}
             onPress={handleAddPhoto}
             disabled={photos.length >= MAX_PHOTOS || saving}
           >
-            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Ajouter une photo</Text>}
+            {saving ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
+              <View style={styles.btnInner}>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text style={styles.btnPrimaryText}>Ajouter</Text>
+              </View>
+            )}
           </Pressable>
         </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, {
+            width: `${(photos.length / MAX_PHOTOS) * 100}%` as any,
+            backgroundColor: photos.length < MIN_RECOMMENDED ? "#F59E0B" : Pastel.teal,
+          }]} />
+        </View>
+        {photos.length < MIN_RECOMMENDED && photos.length > 0 && (
+          <View style={styles.progressWarning}>
+            <Ionicons name="information-circle-outline" size={14} color="#92400E" />
+            <Text style={styles.progressWarningText}>3 photos minimum recommandées pour apparaître dans les résultats Jovial.</Text>
+          </View>
+        )}
+      </View>
 
+      {/* Logo de l'établissement */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>◎</Text></View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>Logo de l'établissement</Text>
+            <Text style={styles.cardHint}>Affiché en rond sur ta fiche Jovial. Idéalement carré, sur fond uni.</Text>
+          </View>
+        </View>
+        <View style={styles.logoRow}>
+          <View style={styles.logoPreview}>
+            {profile?.logo_url ? (
+              <Image source={{ uri: profile.logo_url }} style={styles.logoImg} contentFit="cover" />
+            ) : (
+              <Ionicons name="business-outline" size={28} color={Pastel.textMuted} />
+            )}
+          </View>
+          <Pressable style={[styles.btnPrimary, saving && styles.btnDisabled]} onPress={handleUploadLogo} disabled={saving}>
+            <View style={styles.btnInner}>
+              <Ionicons name={profile?.logo_url ? "refresh" : "add"} size={16} color="#FFFFFF" />
+              <Text style={styles.btnPrimaryText}>{profile?.logo_url ? "Remplacer le logo" : "Ajouter un logo"}</Text>
+            </View>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Preview couverture */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>★</Text></View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>Photo de couverture</Text>
+            <Text style={styles.cardHint}>C'est la première image que voient les utilisateurs Jovial avant d'ouvrir ta fiche.</Text>
+          </View>
+        </View>
         <Image
           source={previewPhoto ? { uri: previewPhoto } : FALLBACK_IMAGE}
           style={styles.coverImage}
           contentFit="cover"
         />
+        {photos.length === 0 && (
+          <Pressable style={styles.emptyAddBtn} onPress={handleAddPhoto} disabled={saving}>
+            <Ionicons name="image-outline" size={20} color={Pastel.teal} />
+            <Text style={styles.emptyAddText}>Importer ma première photo</Text>
+          </Pressable>
+        )}
       </View>
 
-      <View style={styles.heroCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Galerie</Text>
-          <Text style={styles.counterText}>{photos.length} visuel(x)</Text>
-        </View>
-
-        {photos.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.cardText}>
-              Aucune photo pour le moment. Commence par importer les visuels du lieu.
-            </Text>
-            <Pressable style={styles.primaryButton} onPress={handleAddPhoto} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Importer ma première photo</Text>}
-            </Pressable>
+      {/* Galerie */}
+      {photos.length > 0 && (
+        <View style={styles.card}>
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.sectionBadge, { backgroundColor: Pastel.primary }]}><Text style={styles.sectionBadgeText}>☰</Text></View>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.cardTitle}>Galerie</Text>
+              <Text style={styles.cardHint}>Réorganise les photos avec les flèches — la première devient automatiquement la couverture.</Text>
+            </View>
           </View>
-        ) : (
+
           <View style={styles.galleryGrid}>
             {photos.map((photo, index) => (
-              <View key={`${photo}-${index}`} style={styles.galleryItem}>
-                <Image source={{ uri: photo }} style={styles.galleryImage} contentFit="cover" />
-
-                <View style={styles.galleryMeta}>
-                  <View style={styles.galleryMetaText}>
-                    <Text style={styles.galleryLabel}>{index === 0 ? "Preview actuelle" : `Photo ${index + 1}`}</Text>
-                    <Text style={styles.galleryHint}>
-                      {index === 0 ? "Visible avant l'ouverture de la fiche" : "Réorganisable"}
-                    </Text>
-                  </View>
-                  <View style={[styles.previewBadge, index === 0 ? styles.previewBadgeActive : null]}>
-                    <Text style={[styles.previewBadgeText, index === 0 ? styles.previewBadgeTextActive : null]}>
-                      #{index + 1}
-                    </Text>
+              <View key={`${photo}-${index}`} style={[styles.galleryItem, index === 0 && styles.galleryItemFirst]}>
+                <View style={styles.galleryImageWrapper}>
+                  <Image source={{ uri: photo }} style={styles.galleryImage} contentFit="cover" />
+                  <View style={[styles.badge, index === 0 ? styles.badgeTeal : styles.badgeGray]}>
+                    <Text style={styles.badgeText}>{index === 0 ? "★ Couverture" : `#${index + 1}`}</Text>
                   </View>
                 </View>
 
-                <View style={styles.actionsRow}>
-                  <Pressable
-                    style={[styles.iconButton, index === 0 ? styles.iconButtonDisabled : null]}
-                    onPress={() => movePhoto(index, -1)}
-                    disabled={index === 0 || saving}
-                  >
-                    <Ionicons name="arrow-back" size={16} color={index === 0 ? "#9CA3AF" : "#111827"} />
+                {/* Actions */}
+                <View style={styles.actionsGrid}>
+                  {/* Réorganiser */}
+                  <View style={styles.moveRow}>
+                    <Pressable
+                      style={[styles.iconBtn, index === 0 && styles.iconBtnDisabled]}
+                      onPress={() => movePhoto(index, -1)}
+                      disabled={index === 0 || saving}
+                    >
+                      <Ionicons name="arrow-back" size={15} color={index === 0 ? "#D1D5DB" : Pastel.text} />
+                    </Pressable>
+                    <Text style={styles.moveLabel}>Réorganiser</Text>
+                    <Pressable
+                      style={[styles.iconBtn, index === photos.length - 1 && styles.iconBtnDisabled]}
+                      onPress={() => movePhoto(index, 1)}
+                      disabled={index === photos.length - 1 || saving}
+                    >
+                      <Ionicons name="arrow-forward" size={15} color={index === photos.length - 1 ? "#D1D5DB" : Pastel.text} />
+                    </Pressable>
+                  </View>
+
+                  {/* Mettre en couverture */}
+                  {index !== 0 && (
+                    <Pressable style={styles.actionBtn} onPress={() => makePreview(index)} disabled={saving}>
+                      <Ionicons name="star-outline" size={14} color={Pastel.teal} />
+                      <Text style={[styles.actionBtnText, { color: Pastel.teal }]}>Mettre en couverture</Text>
+                    </Pressable>
+                  )}
+
+                  {/* Remplacer */}
+                  <Pressable style={styles.actionBtn} onPress={() => handleReplacePhoto(index)} disabled={saving}>
+                    <Ionicons name="pencil-outline" size={14} color={Pastel.text} />
+                    <Text style={styles.actionBtnText}>Remplacer</Text>
                   </Pressable>
-                  <Pressable
-                    style={[styles.iconButton, index === photos.length - 1 ? styles.iconButtonDisabled : null]}
-                    onPress={() => movePhoto(index, 1)}
-                    disabled={index === photos.length - 1 || saving}
-                  >
-                    <Ionicons name="arrow-forward" size={16} color={index === photos.length - 1 ? "#9CA3AF" : "#111827"} />
-                  </Pressable>
-                  <Pressable
-                    style={[styles.secondaryButton, saving ? styles.buttonDisabled : null]}
-                    onPress={() => handleReplacePhoto(index)}
-                    disabled={saving}
-                  >
-                    <Text style={styles.secondaryButtonText}>Recadrer / remplacer</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.secondaryButton, index === 0 ? styles.buttonDisabled : null]}
-                    onPress={() => makePreview(index)}
-                    disabled={index === 0 || saving}
-                  >
-                    <Text style={styles.secondaryButtonText}>Mettre en preview</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.dangerButton, saving ? styles.buttonDisabled : null]}
-                    onPress={() => removePhoto(photo)}
-                    disabled={saving}
-                  >
-                    <Text style={styles.dangerButtonText}>Supprimer</Text>
+
+                  {/* Supprimer */}
+                  <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={() => setConfirmDeletePhoto(photo)} disabled={saving}>
+                    <Ionicons name="trash-outline" size={14} color="#BE123C" />
+                    <Text style={[styles.actionBtnText, { color: "#BE123C" }]}>Supprimer</Text>
                   </Pressable>
                 </View>
               </View>
             ))}
           </View>
-        )}
-      </View>
+        </View>
+      )}
     </JovialProShell>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 20 },
+  centerTitle: { fontSize: 22, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
+
+  // Boutons
+  btnPrimary: { backgroundColor: Pastel.primary, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11, alignItems: "center", justifyContent: "center" },
+  btnPrimaryText: { color: "#FFFFFF", fontSize: 14, fontFamily: Font.extraBold, includeFontPadding: false },
+  btnInner: { flexDirection: "row", alignItems: "center", gap: 6 },
+  btnDisabled: { opacity: 0.45 },
+
+  // Logo
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 16 },
+  logoPreview: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Pastel.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Pastel.border,
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#F8F9FA",
-    padding: 20,
+    overflow: "hidden",
   },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827" },
-  heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 20,
-    gap: 14,
-  },
-  heroHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  heroText: { flex: 1, minWidth: 260, gap: 6 },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "center",
-  },
-  cardTitle: { color: "#111827", fontSize: 20, fontWeight: "800" },
-  cardText: { color: "#9CA3AF", fontSize: 14, lineHeight: 20 },
-  counterCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    minWidth: 116,
-  },
-  counterValue: { color: "#111827", fontSize: 22, fontWeight: "800" },
-  counterLabel: { color: "#9CA3AF", fontSize: 11, fontWeight: "700", textAlign: "center" },
-  counterText: { color: "#111827", fontSize: 12, fontWeight: "800" },
-  coverImage: {
-    width: "100%",
-    aspectRatio: 16 / 6,
-    maxHeight: 220,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-  },
-  emptyState: { gap: 12, alignItems: "flex-start" },
-  galleryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  galleryItem: {
-    width: 220,
-    gap: 10,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 20,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  galleryImage: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-  },
-  galleryMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "center",
-  },
-  galleryMetaText: { flex: 1, gap: 2 },
-  galleryLabel: { color: "#111827", fontSize: 13, fontWeight: "800" },
-  galleryHint: { color: "#9CA3AF", fontSize: 12, lineHeight: 17 },
-  previewBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  previewBadgeActive: {
-    backgroundColor: "#2B4E93",
-    borderColor: "#2B4E93",
-  },
-  previewBadgeText: { color: "#111827", fontSize: 11, fontWeight: "800" },
-  previewBadgeTextActive: { color: "#FFFFFF" },
-  actionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    alignItems: "center",
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  iconButtonDisabled: { opacity: 0.45 },
-  primaryButton: {
-    backgroundColor: "#2B4E93",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  secondaryButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  secondaryButtonText: { color: "#111827", fontSize: 12, fontWeight: "700" },
-  dangerButton: {
-    backgroundColor: "#FFF1F2",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FBCFE8",
-  },
-  dangerButtonText: { color: "#BE123C", fontSize: 12, fontWeight: "700" },
-  buttonDisabled: { opacity: 0.5 },
-  deleteConfirm: {
-    backgroundColor: "#FFF1F2",
+  logoImg: { width: "100%", height: "100%" },
+
+  // Progression
+  progressBlock: {
+    backgroundColor: Pastel.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#FBCFE8",
+    borderColor: Pastel.border,
     padding: 18,
     gap: 10,
   },
-  deleteConfirmText: {
-    color: "#BE123C",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  deleteConfirmHint: {
-    color: "#BE123C",
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.8,
-  },
-  deleteConfirmRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-  },
-  deleteConfirmCancel: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-  },
-  deleteConfirmCancelText: {
-    color: "#111827",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  deleteConfirmOk: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 11,
-    borderRadius: 12,
-    backgroundColor: "#BE123C",
-  },
-  deleteConfirmOkText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
+  progressHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  progressLeft: { flex: 1, gap: 3 },
+  progressTitle: { color: Pastel.text, fontSize: 16, fontFamily: Font.extraBold, includeFontPadding: false },
+  progressSub: { color: Pastel.textMuted, fontSize: 13, lineHeight: 18, includeFontPadding: false },
+  progressTrack: { height: 6, backgroundColor: Pastel.border, borderRadius: 99, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 99 },
+  progressWarning: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#FFFBEB", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
+  progressWarningText: { color: "#92400E", fontSize: 12, fontFamily: Font.semiBold, flex: 1, includeFontPadding: false },
+
+  // Card
+  card: { backgroundColor: Pastel.surface, borderRadius: 24, borderWidth: 1, borderColor: Pastel.border, padding: 18, gap: 14 },
+  cardHeaderRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  cardHeaderText: { flex: 1, gap: 3 },
+  cardTitle: { color: Pastel.text, fontSize: 18, fontFamily: Font.extraBold, includeFontPadding: false },
+  cardHint: { color: Pastel.textMuted, fontSize: 13, lineHeight: 18, includeFontPadding: false },
+
+  // Section badge
+  sectionBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: Pastel.teal, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  sectionBadgeText: { color: "#FFFFFF", fontSize: 13, fontFamily: Font.bold, includeFontPadding: false },
+
+  // Cover
+  coverImage: { width: "100%", aspectRatio: 16 / 6, borderRadius: 16, backgroundColor: Pastel.surfaceAlt },
+  emptyAddBtn: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", paddingVertical: 12, paddingHorizontal: 20, borderRadius: 14, borderWidth: 1, borderColor: Pastel.teal, borderStyle: "dashed" },
+  emptyAddText: { color: Pastel.teal, fontSize: 14, fontFamily: Font.semiBold, includeFontPadding: false },
+
+  // Galerie
+  galleryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  galleryItem: { width: 240, backgroundColor: Pastel.surfaceSoft, borderRadius: 18, padding: 12, gap: 10, borderWidth: 1, borderColor: Pastel.border },
+  galleryItemFirst: { borderColor: Pastel.teal, borderWidth: 2 },
+  galleryImageWrapper: { position: "relative" },
+  galleryImage: { width: "100%", aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: Pastel.surfaceAlt },
+  badge: { position: "absolute", top: 8, left: 8, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  badgeTeal: { backgroundColor: Pastel.teal },
+  badgeGray: { backgroundColor: "rgba(0,0,0,0.45)" },
+  badgeText: { color: "#FFFFFF", fontSize: 11, fontFamily: Font.extraBold, includeFontPadding: false },
+
+  // Actions galerie
+  actionsGrid: { gap: 7 },
+  moveRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  moveLabel: { flex: 1, color: Pastel.textMuted, fontSize: 12, fontFamily: Font.semiBold, textAlign: "center", includeFontPadding: false },
+  iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: Pastel.surface, borderWidth: 1, borderColor: Pastel.border },
+  iconBtnDisabled: { opacity: 0.3 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: Pastel.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderColor: Pastel.border },
+  actionBtnText: { color: Pastel.text, fontSize: 13, fontFamily: Font.semiBold, includeFontPadding: false },
+  actionBtnDanger: { borderColor: "#FBCFE8", backgroundColor: "#FFF1F2" },
+
+  // Suppression
+  deleteConfirm: { backgroundColor: "#FFF1F2", borderRadius: 18, borderWidth: 1, borderColor: "#FBCFE8", padding: 16, gap: 12 },
+  deleteConfirmLeft: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  deleteConfirmText: { flex: 1, gap: 3 },
+  deleteConfirmTitle: { color: "#BE123C", fontSize: 15, fontFamily: Font.extraBold, includeFontPadding: false },
+  deleteConfirmHint: { color: "#BE123C", fontSize: 13, lineHeight: 18, opacity: 0.8, includeFontPadding: false },
+  deleteConfirmRow: { flexDirection: "row", gap: 10 },
+  deleteCancel: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 12, borderWidth: 1, borderColor: Pastel.border, backgroundColor: Pastel.surface },
+  deleteCancelText: { color: Pastel.text, fontSize: 14, fontFamily: Font.bold, includeFontPadding: false },
+  deleteOk: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 12, backgroundColor: "#BE123C" },
+  deleteOkText: { color: "#FFFFFF", fontSize: 14, fontFamily: Font.bold, includeFontPadding: false },
 });
