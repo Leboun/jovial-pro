@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/establishment/events", label: "Événements", icon: "calendar-outline" },
   { href: "/establishment/club", label: "Club Jovial", icon: "people-circle-outline", minPlan: "rayonnement" },
   { href: "/establishment/boosts", label: "Boosts", icon: "flash-outline", minPlan: "rayonnement" },
+  { href: "/establishment/communication-kit", label: "Kit de comm", icon: "megaphone-outline" },
   { href: "/establishment/reservations", label: "Réservations", icon: "bookmark-outline" },
   { href: "/establishment/notifications", label: "Notifications", icon: "notifications-outline" },
 ];
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   brandEyebrow: {
-    color: Pastel.orange,
+    color: Pastel.teal,
     fontSize: 10,
     fontFamily: Font.extraBold,
     letterSpacing: 1.4,
@@ -486,10 +487,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   pageSubtitle: {
-    color: Pastel.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: Font.regular,
+    color: Pastel.text,
+    fontSize: 18,
+    lineHeight: 26,
+    fontFamily: Font.semiBold,
   },
   rightSlot: {
     minWidth: 220,
