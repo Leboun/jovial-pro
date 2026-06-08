@@ -203,7 +203,9 @@ function VenuePin({ venue, isActive, isFavorite, isSpotlight }: { venue: Venue; 
   const visualSize = isActive ? 56 : 48;
   const strokeWidth = isActive || isSpotlight ? 3 : 2.5;
   const r = visualSize / 2 - strokeWidth / 2;
-  const badge = isSpotlight ? "⚡" : isFavorite ? "❤️" : (!isActive && venue.nextEvent && !isEventOnly) ? "🔶" : null;
+  const emojiBadge = isSpotlight ? "⚡" : isFavorite ? "❤️" : null;
+  // Indicateur "evenement a venir" : pastille dessinee (l'emoji 🔶 s'affichait en carre dans le marqueur)
+  const showEventDot = !isSpotlight && !isFavorite && !isActive && !!venue.nextEvent && !isEventOnly;
   const fontSize = isActive ? 20 : 17;
 
   return (
@@ -225,15 +227,18 @@ function VenuePin({ venue, isActive, isFavorite, isSpotlight }: { venue: Venue; 
         >
           {emoji}
         </SvgText>
-        {badge ? (
+        {emojiBadge ? (
           <SvgText
             x={BOX - 12}
             y={12}
             fontSize={10}
             textAnchor="middle"
           >
-            {badge}
+            {emojiBadge}
           </SvgText>
+        ) : null}
+        {showEventDot ? (
+          <Circle cx={BOX - 12} cy={9} r={5.5} fill="#F59E0B" stroke="#FFFFFF" strokeWidth={1.5} />
         ) : null}
       </Svg>
     </View>

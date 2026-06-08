@@ -88,7 +88,7 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
     return () => { active = false; };
   }, [venue.logoUrl]);
   const photoH = small ? 100 : 120;
-  const LOGO_H = small ? 56 : 64;
+  const LOGO_H = small ? 66 : 78;
   const logoW = Math.round(LOGO_H * Math.min(1.8, Math.max(0.6, logoAspect)));
   const logoTop = Math.round(photoH - LOGO_H * (2 / 3));
 
@@ -113,7 +113,7 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
             onPress={(e) => { e.stopPropagation(); onClose(); }}
             hitSlop={10}
           >
-            <Ionicons name="close" size={14} color="#FFFFFF" />
+            <Ionicons name="close" size={19} color="#FFFFFF" />
           </Pressable>
         ) : null}
 
@@ -126,7 +126,7 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
           >
             <Ionicons
               name={isFavorite ? "heart-sharp" : "heart-outline"}
-              size={16}
+              size={20}
               color={isFavorite ? "#EF4444" : "#FFFFFF"}
             />
           </Pressable>
@@ -252,10 +252,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -263,10 +263,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     left: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bodySmall: { paddingTop: 10, paddingBottom: 10, gap: 6 },
-  bodyLogo: { paddingTop: 30 },
-  bodyLogoSmall: { paddingTop: 26 },
+  bodyLogo: { paddingTop: 36 },
+  bodyLogoSmall: { paddingTop: 30 },
   name: {
     color: Pastel.text,
     fontSize: 22,
