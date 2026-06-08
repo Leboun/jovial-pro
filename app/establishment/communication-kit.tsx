@@ -103,10 +103,14 @@ export default function CommunicationKitScreen() {
 
   const downloadImage = async (source: any, filename: string) => {
     try {
+      const asset = Asset.fromModule(source);
       if (Platform.OS === "web") {
-        const uri = RNImage.resolveAssetSource(source)?.uri;
-        if (!uri) return;
         const doc: any = (globalThis as any).document;
+        const uri = asset.uri || asset.localUri || RNImage.resolveAssetSource(source)?.uri;
+        if (!uri) {
+          Alert.alert("Oups", "Visuel introuvable.");
+          return;
+        }
         try {
           const res = await fetch(uri);
           const blob = await res.blob();
@@ -121,17 +125,16 @@ export default function CommunicationKitScreen() {
         } catch {
           (globalThis as any).open?.(uri, "_blank");
         }
-      } else {
-        const perm = await MediaLibrary.requestPermissionsAsync();
-        if (!perm.granted) {
-          Alert.alert("Autorisation requise", "Autorise l'accès aux photos pour enregistrer le visuel.");
-          return;
-        }
-        const asset = Asset.fromModule(source);
-        await asset.downloadAsync();
-        await MediaLibrary.saveToLibraryAsync(asset.localUri || asset.uri);
-        Alert.alert("Téléchargé !", "Le visuel est enregistré dans ta galerie.");
+        return;
       }
+      const perm = await MediaLibrary.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Autorisation requise", "Autorise l'accès aux photos pour enregistrer le visuel.");
+        return;
+      }
+      await asset.downloadAsync();
+      await MediaLibrary.saveToLibraryAsync(asset.localUri || asset.uri);
+      Alert.alert("Téléchargé !", "Le visuel est enregistré dans ta galerie.");
     } catch {
       Alert.alert("Oups", "Téléchargement impossible.");
     }

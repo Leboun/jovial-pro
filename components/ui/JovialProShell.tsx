@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -123,11 +124,14 @@ export default function JovialProShell({
       <View style={styles.brandBlock}>
         <View style={styles.brandRow}>
           <View style={styles.brandLogoSmall}>
-            <Text style={styles.brandLogoText}>J</Text>
+            {venue?.logo_url ? (
+              <Image source={{ uri: venue.logo_url }} style={styles.brandLogoImg} resizeMode="cover" />
+            ) : (
+              <Text style={styles.brandLogoText}>J</Text>
+            )}
           </View>
           <View style={styles.brandTextBlock}>
-            <Text style={styles.brandEyebrow}>JOVIAL PRO</Text>
-            <Text style={styles.brandTitle}>Espace partenaire</Text>
+            <Text style={styles.brandTitle}>Jovial Pro</Text>
           </View>
         </View>
         <Text style={styles.brandText}>
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   sidebar: {
-    width: 250,
+    width: 196,
   },
   sidebarContent: {
     padding: 20,
@@ -332,7 +336,9 @@ const styles = StyleSheet.create({
     backgroundColor: Pastel.primary,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
+  brandLogoImg: { width: "100%", height: "100%" },
   brandLogoText: {
     color: "#FFFFFF",
     fontSize: 18,
