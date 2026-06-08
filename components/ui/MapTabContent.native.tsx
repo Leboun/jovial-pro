@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     borderWidth: 1,
-    borderColor: "#EAD9C0",
+    borderColor: "#E5E7EB",
   },
   suggestBannerContent: {
     flex: 1,
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   suggestBannerBtn: {
-    backgroundColor: "#EF6731",
+    backgroundColor: "#2B4E93",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 10,
