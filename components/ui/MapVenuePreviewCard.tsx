@@ -13,6 +13,7 @@ type PreviewVenue = {
   address?: string | null;
   activities?: string[];
   venueType?: string | null;
+  logoUrl?: string | null;
   distanceLabel?: string;
   openingLabel?: string;
   openingTone?: "open" | "closed" | "neutral";
@@ -111,31 +112,11 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
             hitSlop={10}
           >
             <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
+              name={isFavorite ? "heart-sharp" : "heart-outline"}
               size={16}
               color={isFavorite ? "#EF4444" : "#FFFFFF"}
             />
           </Pressable>
-        ) : null}
-
-        {/* Badge statut horaire — bas gauche */}
-        {venue.openingLabel ? (
-          <View style={[
-            styles.statusPill,
-            venue.openingTone === "open" ? styles.statusOpen :
-            venue.openingTone === "closed" ? styles.statusClosed : styles.statusNeutral,
-          ]}>
-            <View style={[
-              styles.statusDot,
-              venue.openingTone === "open" ? styles.dotOpen :
-              venue.openingTone === "closed" ? styles.dotClosed : styles.dotNeutral,
-            ]} />
-            <Text style={[
-              styles.statusText,
-              venue.openingTone === "open" ? styles.statusTextOpen :
-              venue.openingTone === "closed" ? styles.statusTextClosed : styles.statusTextNeutral,
-            ]}>{venue.openingLabel}</Text>
-          </View>
         ) : null}
 
         {/* Badge type de lieu — bas droite */}
@@ -153,9 +134,37 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
         ) : null}
       </View>
 
+      {/* Logo — centré, chevauche le bas de la photo (2/3 dessus, 1/3 dessous) */}
+      {venue.logoUrl ? (
+        <View style={[styles.logoWrap, small && styles.logoWrapSmall]} pointerEvents="none">
+          <View style={styles.logoAvatar}>
+            <Image source={{ uri: venue.logoUrl }} style={styles.logoImg} resizeMode="cover" />
+          </View>
+        </View>
+      ) : null}
+
       {/* Contenu */}
-      <View style={[styles.body, small && styles.bodySmall]}>
+      <View style={[styles.body, small && styles.bodySmall, venue.logoUrl ? (small ? styles.bodyLogoSmall : styles.bodyLogo) : null]}>
         <Text numberOfLines={1} style={[styles.name, small && styles.nameSmall]}>{venue.name}</Text>
+
+        {venue.openingLabel ? (
+          <View style={[
+            styles.statusPillBody,
+            venue.openingTone === "open" ? styles.statusOpen :
+            venue.openingTone === "closed" ? styles.statusClosed : styles.statusNeutral,
+          ]}>
+            <View style={[
+              styles.statusDot,
+              venue.openingTone === "open" ? styles.dotOpen :
+              venue.openingTone === "closed" ? styles.dotClosed : styles.dotNeutral,
+            ]} />
+            <Text style={[
+              styles.statusText,
+              venue.openingTone === "open" ? styles.statusTextOpen :
+              venue.openingTone === "closed" ? styles.statusTextClosed : styles.statusTextNeutral,
+            ]}>{venue.openingLabel}</Text>
+          </View>
+        ) : null}
 
         {hasContent ? (
           <View style={styles.tagsSection}>
@@ -190,6 +199,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 26,
     backgroundColor: Pastel.surface,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.07)",
     shadowColor: "#000",
     shadowOpacity: 0.18,
     shadowRadius: 24,
@@ -247,21 +258,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  /* Badge statut — bas gauche */
-  statusPill: {
-    position: "absolute",
-    bottom: 10,
-    left: 12,
+  /* Logo centré chevauchant le bas de la photo */
+  logoWrap: { position: "absolute", top: 77, left: 0, right: 0, alignItems: "center", zIndex: 5 },
+  logoWrapSmall: { top: 57 },
+  logoAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    borderWidth: 3,
+    borderColor: Pastel.surface,
+    backgroundColor: Pastel.surfaceAlt,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  logoImg: { width: "100%", height: "100%" },
+
+  /* Badge statut — dans le corps, centré sous le nom */
+  statusPillBody: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
     gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
   },
-  statusOpen: { backgroundColor: "rgba(220,252,231,0.72)" },
-  statusClosed: { backgroundColor: "rgba(254,226,226,0.72)" },
-  statusNeutral: { backgroundColor: "rgba(255,255,255,0.55)" },
+  statusOpen: { backgroundColor: "#DCFCE7" },
+  statusClosed: { backgroundColor: "#FEE2E2" },
+  statusNeutral: { backgroundColor: Pastel.surfaceAlt },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   dotOpen: { backgroundColor: "#16A34A" },
   dotClosed: { backgroundColor: "#DC2626" },
@@ -313,6 +341,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bodySmall: { paddingTop: 10, paddingBottom: 10, gap: 6 },
+  bodyLogo: { paddingTop: 30 },
+  bodyLogoSmall: { paddingTop: 26 },
   name: {
     color: Pastel.text,
     fontSize: 22,
@@ -320,6 +350,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    textAlign: "center",
     includeFontPadding: false,
   },
   nameSmall: { fontSize: 17, lineHeight: 22 },

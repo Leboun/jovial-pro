@@ -23,6 +23,7 @@ type Venue = {
   lat: number;
   lng: number;
   cover_url?: string | null;
+  logo_url?: string | null;
   photos?: string[];
   tags?: string[];
   activities?: string[];
@@ -386,7 +387,7 @@ export default function MapTabContentNative() {
         const [{ data, error }, { data: eventRows }] = await Promise.all([
           supabase
             .from("venues")
-            .select("id, name, lat, lng, cover_url, photos, tags, activities, venue_type, address, city, postcode, contact, opening_hours, timezone, social_platform, social_url")
+            .select("id, name, lat, lng, cover_url, logo_url, photos, tags, activities, venue_type, address, city, postcode, contact, opening_hours, timezone, social_platform, social_url")
             .not("lat", "is", null)
             .not("lng", "is", null),
           supabase
@@ -416,6 +417,7 @@ export default function MapTabContentNative() {
             lat: toNumber(row.lat),
             lng: toNumber(row.lng),
             cover_url: row.cover_url ?? null,
+            logo_url: row.logo_url ?? null,
             photos: Array.isArray(row.photos) ? row.photos.filter(Boolean) : [],
             tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
             activities: Array.isArray(row.activities) ? row.activities.filter(Boolean) : [],
@@ -580,6 +582,7 @@ export default function MapTabContentNative() {
               id: selectedVenue.id,
               name: selectedVenue.name,
               coverUrl: selectedVenue.cover_url ?? null,
+              logoUrl: selectedVenue.logo_url ?? null,
               city: selectedVenue.city ?? null,
               address: selectedVenue.address ?? null,
               activities: dedup(selectedVenue.activities ?? []),
