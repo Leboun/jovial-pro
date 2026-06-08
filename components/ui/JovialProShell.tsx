@@ -221,7 +221,9 @@ export default function JovialProShell({
     <View style={styles.page}>
       {isDesktop ? (
         <View style={styles.desktopLayout}>
-          <View style={styles.sidebar}>{nav}</View>
+          <ScrollView style={styles.sidebar} contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
+            {nav}
+          </ScrollView>
           <View style={styles.mainPane}>
             <View style={styles.headerRow}>
               <View style={styles.headerTextBlock}>
@@ -277,8 +279,12 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: 300,
+  },
+  sidebarContent: {
     padding: 20,
     paddingRight: 0,
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   mainPane: {
     flex: 1,

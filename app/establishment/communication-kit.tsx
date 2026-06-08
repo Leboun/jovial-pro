@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { Alert, Linking, Platform, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Image as RNImage, Linking, Platform, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import * as MediaLibrary from "expo-media-library";
+import { Asset } from "expo-asset";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -14,6 +16,16 @@ import { Font } from "@/constants/typography";
 
 // TODO: remplacer par le lien stores (smart link) une fois l'appli publiée.
 const APP_LINK = "https://getjovial.fr";
+
+const VISUALS: { key: string; label: string; file: string; source: any }[] = [
+  { key: "generique", label: "Générique", file: "jovial-generique.png", source: require("../../assets/comm-kit/generique.png") },
+  { key: "flechette", label: "Fléchettes", file: "jovial-flechettes.png", source: require("../../assets/comm-kit/flechette.png") },
+  { key: "danse", label: "Danse", file: "jovial-danse.png", source: require("../../assets/comm-kit/danse.png") },
+  { key: "standup", label: "Stand-up", file: "jovial-standup.png", source: require("../../assets/comm-kit/stand-up.png") },
+  { key: "sticker", label: "Sticker", file: "jovial-sticker.png", source: require("../../assets/comm-kit/sticker.png") },
+  { key: "logo", label: "Logo Jovial", file: "jovial-logo.png", source: require("../../assets/images/logo_jovial.png") },
+  { key: "mascotte", label: "Mascotte", file: "jovial-mascotte.png", source: require("../../assets/images/logo_mascotte.png") },
+];
 
 export default function CommunicationKitScreen() {
   const router = useRouter();
@@ -48,9 +60,18 @@ export default function CommunicationKitScreen() {
   const venueName = profile?.name?.trim() || "Ton établissement";
 
   const shareTexts = [
-    `🎯 Retrouvez ${venueName} sur Jovial ! Découvrez nos jeux et événements, et réservez en quelques clics : ${APP_LINK}`,
-    `On est sur Jovial ! 🎉 L'appli pour trouver des bars avec jeux & événements près de chez toi. Télécharge-la : ${APP_LINK}`,
-    `Envie de sortir ce soir ? Retrouve ${venueName} et plein d'autres lieux sur Jovial 👉 ${APP_LINK}`,
+    {
+      label: "Facebook / Instagram",
+      text: `🎉 Bonne nouvelle ! ${venueName} est désormais sur Jovial 🎯\n\nVous cherchez où jouer aux fléchettes, au billard, ou passer une super soirée ? Retrouvez-nous sur Jovial, l'appli qui référence les meilleurs lieux pour sortir et s'amuser près de chez vous !\n\n📲 Téléchargez l'appli, découvrez nos jeux & événements, et réservez en quelques clics.\n👉 ${APP_LINK}\n\n#Jovial #SortezJouer`,
+    },
+    {
+      label: "LinkedIn",
+      text: `Fiers d'annoncer que ${venueName} rejoint Jovial Pro 🎯\n\nJovial, c'est l'application qui connecte les établissements (bars, pubs, lieux de jeux…) à une communauté en quête de sorties conviviales : jeux, événements, soirées.\n\nGrâce à Jovial Pro, nous gagnons en visibilité, mettons en avant nos activités et touchons de nouveaux clients.\n\n👉 Vous gérez un établissement ? Découvrez Jovial Pro, ça vaut le coup.\n📲 Côté public : l'appli est dispo pour trouver votre prochaine sortie !\n\n${APP_LINK}\n#Jovial #JovialPro #Hospitality`,
+    },
+    {
+      label: "Story Instagram (courte)",
+      text: `On est sur Jovial ! 🎯 Nos jeux & événements sont dans l'appli 👉 ${APP_LINK}`,
+    },
   ];
 
   const copy = async (text: string, label = "Texte") => {
@@ -70,13 +91,41 @@ export default function CommunicationKitScreen() {
   const openUrl = (url: string) => Linking.openURL(url).catch(() => {});
   const shareNative = async () => {
     try {
-      await Share.share({ message: shareTexts[0] });
+      await Share.share({ message: shareTexts[0].text });
     } catch {
-      copy(shareTexts[0], "Message");
+      copy(shareTexts[0].text, "Message");
     }
   };
-  const shareWhatsApp = () => openUrl(`https://wa.me/?text=${encodeURIComponent(shareTexts[0])}`);
+  const shareWhatsApp = () => openUrl(`https://wa.me/?text=${encodeURIComponent(shareTexts[0].text)}`);
   const shareFacebook = () => openUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_LINK)}`);
+
+  const downloadImage = async (source: any, filename: string) => {
+    try {
+      if (Platform.OS === "web") {
+        const uri = RNImage.resolveAssetSource(source)?.uri;
+        if (!uri) return;
+        const doc: any = (globalThis as any).document;
+        const a = doc.createElement("a");
+        a.href = uri;
+        a.download = filename;
+        doc.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        const perm = await MediaLibrary.requestPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert("Autorisation requise", "Autorise l'accès aux photos pour enregistrer le visuel.");
+          return;
+        }
+        const asset = Asset.fromModule(source);
+        await asset.downloadAsync();
+        await MediaLibrary.saveToLibraryAsync(asset.localUri || asset.uri);
+        Alert.alert("Téléchargé !", "Le visuel est enregistré dans ta galerie.");
+      }
+    } catch {
+      Alert.alert("Oups", "Téléchargement impossible.");
+    }
+  };
 
   if (!userId) {
     return (
@@ -120,30 +169,34 @@ export default function CommunicationKitScreen() {
         </View>
       </View>
 
-      {/* Visuel à partager */}
+      {/* Visuels & logos à télécharger */}
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
-          <View style={styles.sectionBadge}><Ionicons name="image-outline" size={16} color="#FFFFFF" /></View>
+          <View style={styles.sectionBadge}><Ionicons name="images-outline" size={16} color="#FFFFFF" /></View>
           <View style={styles.cardHeaderText}>
-            <Text style={styles.cardTitle}>Visuel prêt à partager</Text>
-            <Text style={styles.cardHint}>Fais une capture d'écran de la carte ci-dessous et poste-la en story ou en publication.</Text>
+            <Text style={styles.cardTitle}>Visuels & logos à télécharger</Text>
+            <Text style={styles.cardHint}>Récupère nos visuels prêts à poster, ainsi que le logo et la mascotte Jovial.</Text>
           </View>
         </View>
-        <View style={styles.poster}>
-          <View style={styles.posterLogo}>
-            {profile?.logo_url ? (
-              <Image source={profile.logo_url} style={styles.posterLogoImg} contentFit="contain" />
-            ) : (
-              <Text style={styles.posterLogoLetter}>{venueName.charAt(0).toUpperCase()}</Text>
-            )}
-          </View>
-          <Text style={styles.posterName} numberOfLines={2}>{venueName}</Text>
-          <Text style={styles.posterTagline}>est sur</Text>
-          <Text style={styles.posterBrand}>JOVIAL</Text>
-          <View style={styles.posterQr}>
-            <QRCode value={APP_LINK} size={92} color={Pastel.night} backgroundColor="#FFFFFF" />
-          </View>
-          <Text style={styles.posterFooter}>Scanne & découvre nos jeux et événements 🎯</Text>
+
+        <View style={styles.charterNotice}>
+          <Ionicons name="shield-checkmark-outline" size={18} color={Pastel.primary} />
+          <Text style={styles.charterNoticeText}>
+            <Text style={styles.charterNoticeStrong}>Charte de marque — </Text>
+            Le logo et la mascotte Jovial sont protégés. Tout visuel ou support de communication les utilisant doit être soumis à l'équipe Jovial pour validation avant publication. Contact : hello@getjovial.fr
+          </Text>
+        </View>
+
+        <View style={styles.visualGrid}>
+          {VISUALS.map((v) => (
+            <View key={v.key} style={styles.visualItem}>
+              <Image source={v.source} style={styles.visualThumb} contentFit="contain" />
+              <Pressable style={styles.visualDownloadBtn} onPress={() => downloadImage(v.source, v.file)}>
+                <Ionicons name="download-outline" size={15} color="#FFFFFF" />
+                <Text style={styles.visualDownloadText}>{v.label}</Text>
+              </Pressable>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -156,10 +209,11 @@ export default function CommunicationKitScreen() {
             <Text style={styles.cardHint}>Choisis un texte et colle-le sur Instagram, Facebook, ta page Google…</Text>
           </View>
         </View>
-        {shareTexts.map((text, i) => (
+        {shareTexts.map((t, i) => (
           <View key={i} style={styles.textBlock}>
-            <Text style={styles.textBlockBody}>{text}</Text>
-            <Pressable style={styles.btnOutline} onPress={() => copy(text, "Texte")}>
+            <Text style={styles.textBlockLabel}>{t.label}</Text>
+            <Text style={styles.textBlockBody}>{t.text}</Text>
+            <Pressable style={styles.btnOutline} onPress={() => copy(t.text, "Texte")}>
               <Ionicons name="copy-outline" size={15} color={Pastel.primary} />
               <Text style={styles.btnOutlineText}>Copier</Text>
             </Pressable>
@@ -190,7 +244,7 @@ export default function CommunicationKitScreen() {
             <Text style={styles.shareBtnText}>Autre…</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.btnOutlineWide} onPress={() => copy(shareTexts[0], "Message")}>
+        <Pressable style={styles.btnOutlineWide} onPress={() => copy(shareTexts[0].text, "Message")}>
           <Ionicons name="logo-instagram" size={16} color={Pastel.primary} />
           <Text style={styles.btnOutlineText}>Copier pour Instagram</Text>
         </Pressable>
@@ -291,6 +345,31 @@ const styles = StyleSheet.create({
   posterQr: { padding: 8, backgroundColor: "#FFFFFF", borderRadius: 12 },
   posterFooter: { fontSize: 12, fontFamily: Font.semiBold, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 8, includeFontPadding: false },
 
+  /* Charte + galerie de visuels */
+  charterNotice: {
+    flexDirection: "row",
+    gap: 10,
+    backgroundColor: Pastel.primarySoft,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "flex-start",
+  },
+  charterNoticeText: { flex: 1, fontSize: 12, fontFamily: Font.medium, color: Pastel.text, lineHeight: 17, includeFontPadding: false },
+  charterNoticeStrong: { fontFamily: Font.extraBold, color: Pastel.primary },
+  visualGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  visualItem: { width: "47%", flexGrow: 1, gap: 8 },
+  visualThumb: { width: "100%", height: 150, borderRadius: 12, backgroundColor: Pastel.surfaceAlt },
+  visualDownloadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Pastel.primary,
+    borderRadius: 999,
+    paddingVertical: 9,
+  },
+  visualDownloadText: { fontSize: 12, fontFamily: Font.bold, color: "#FFFFFF", includeFontPadding: false },
+
   /* Textes */
   textBlock: {
     backgroundColor: Pastel.surfaceAlt,
@@ -298,6 +377,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 10,
   },
+  textBlockLabel: { fontSize: 12, fontFamily: Font.extraBold, color: Pastel.primary, textTransform: "uppercase", letterSpacing: 0.5, includeFontPadding: false },
   textBlockBody: { fontSize: 14, fontFamily: Font.medium, color: Pastel.text, lineHeight: 20, includeFontPadding: false },
 
   /* Partage */
