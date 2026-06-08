@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   sidebar: {
-    width: 300,
+    width: 250,
   },
   sidebarContent: {
     padding: 20,

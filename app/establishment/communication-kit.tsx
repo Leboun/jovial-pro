@@ -35,6 +35,7 @@ export default function CommunicationKitScreen() {
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<EstablishmentProfile | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,17 +75,18 @@ export default function CommunicationKitScreen() {
     },
   ];
 
-  const copy = async (text: string, label = "Texte") => {
+  const copy = async (text: string, key: string) => {
     try {
       const nav: any = typeof navigator !== "undefined" ? navigator : null;
       if (Platform.OS === "web" && nav?.clipboard?.writeText) {
         await nav.clipboard.writeText(text);
-        Alert.alert("Copié !", `${label} copié dans le presse-papiers.`);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2200);
       } else {
         await Share.share({ message: text });
       }
     } catch {
-      Alert.alert("Oups", "Impossible de copier automatiquement — sélectionne le texte manuellement.");
+      /* ignore */
     }
   };
 
@@ -93,7 +95,7 @@ export default function CommunicationKitScreen() {
     try {
       await Share.share({ message: shareTexts[0].text });
     } catch {
-      copy(shareTexts[0].text, "Message");
+      copy(shareTexts[0].text, "share");
     }
   };
   const shareWhatsApp = () => openUrl(`https://wa.me/?text=${encodeURIComponent(shareTexts[0].text)}`);
@@ -105,12 +107,20 @@ export default function CommunicationKitScreen() {
         const uri = RNImage.resolveAssetSource(source)?.uri;
         if (!uri) return;
         const doc: any = (globalThis as any).document;
-        const a = doc.createElement("a");
-        a.href = uri;
-        a.download = filename;
-        doc.body.appendChild(a);
-        a.click();
-        a.remove();
+        try {
+          const res = await fetch(uri);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = doc.createElement("a");
+          a.href = blobUrl;
+          a.download = filename;
+          doc.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+        } catch {
+          (globalThis as any).open?.(uri, "_blank");
+        }
       } else {
         const perm = await MediaLibrary.requestPermissionsAsync();
         if (!perm.granted) {
@@ -161,9 +171,9 @@ export default function CommunicationKitScreen() {
           <View style={styles.qrSide}>
             <Text style={styles.linkLabel}>Lien</Text>
             <Text style={styles.linkValue} numberOfLines={2}>{APP_LINK}</Text>
-            <Pressable style={styles.btnOutline} onPress={() => copy(APP_LINK, "Lien")}>
-              <Ionicons name="copy-outline" size={15} color={Pastel.primary} />
-              <Text style={styles.btnOutlineText}>Copier le lien</Text>
+            <Pressable style={styles.btnOutline} onPress={() => copy(APP_LINK, "link")}>
+              <Ionicons name={copiedKey === "link" ? "checkmark" : "copy-outline"} size={15} color={Pastel.primary} />
+              <Text style={styles.btnOutlineText}>{copiedKey === "link" ? "Copié !" : "Copier le lien"}</Text>
             </Pressable>
           </View>
         </View>
@@ -213,9 +223,9 @@ export default function CommunicationKitScreen() {
           <View key={i} style={styles.textBlock}>
             <Text style={styles.textBlockLabel}>{t.label}</Text>
             <Text style={styles.textBlockBody}>{t.text}</Text>
-            <Pressable style={styles.btnOutline} onPress={() => copy(t.text, "Texte")}>
-              <Ionicons name="copy-outline" size={15} color={Pastel.primary} />
-              <Text style={styles.btnOutlineText}>Copier</Text>
+            <Pressable style={styles.btnOutline} onPress={() => copy(t.text, `text-${i}`)}>
+              <Ionicons name={copiedKey === `text-${i}` ? "checkmark" : "copy-outline"} size={15} color={Pastel.primary} />
+              <Text style={styles.btnOutlineText}>{copiedKey === `text-${i}` ? "Copié !" : "Copier"}</Text>
             </Pressable>
           </View>
         ))}
@@ -244,10 +254,6 @@ export default function CommunicationKitScreen() {
             <Text style={styles.shareBtnText}>Autre…</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.btnOutlineWide} onPress={() => copy(shareTexts[0].text, "Message")}>
-          <Ionicons name="logo-instagram" size={16} color={Pastel.primary} />
-          <Text style={styles.btnOutlineText}>Copier pour Instagram</Text>
-        </Pressable>
       </View>
     </JovialProShell>
   );
