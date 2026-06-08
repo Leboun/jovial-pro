@@ -1093,7 +1093,7 @@ export default function VenueScreen() {
           {/* Logo — chevauche la couverture, style Club */}
           <View style={styles.venueLogo}>
             {venue.logo_url && isHttpUrlString(venue.logo_url) ? (
-              <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="cover" transition={150} />
+              <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="contain" transition={150} />
             ) : (
               <Text style={styles.venueLogoLetter}>
                 {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
@@ -1642,7 +1642,8 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 3,
     borderColor: Pastel.background,
-    backgroundColor: Pastel.primarySoft,
+    backgroundColor: "#FFFFFF",
+    padding: 6,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

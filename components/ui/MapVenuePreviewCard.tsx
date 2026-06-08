@@ -138,7 +138,7 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
       {venue.logoUrl ? (
         <View style={[styles.logoWrap, small && styles.logoWrapSmall]} pointerEvents="none">
           <View style={styles.logoAvatar}>
-            <Image source={{ uri: venue.logoUrl }} style={styles.logoImg} resizeMode="cover" />
+            <Image source={{ uri: venue.logoUrl }} style={styles.logoImg} resizeMode="contain" />
           </View>
         </View>
       ) : null}
@@ -267,7 +267,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 3,
     borderColor: Pastel.surface,
-    backgroundColor: Pastel.surfaceAlt,
+    backgroundColor: "#FFFFFF",
+    padding: 5,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.2,
