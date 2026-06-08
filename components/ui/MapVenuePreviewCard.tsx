@@ -79,6 +79,19 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
   const hasActivities = activities.length > 0;
   const hasContent = hasActivities || !!venue.nextEvent;
 
+  // La pastille du logo adopte les proportions reelles du logo (carre/rectangle), largeur max 1,8x la hauteur
+  const [logoAspect, setLogoAspect] = React.useState<number>(1);
+  React.useEffect(() => {
+    if (!venue.logoUrl) return;
+    let active = true;
+    Image.getSize(venue.logoUrl, (w, h) => { if (active && h > 0) setLogoAspect(w / h); }, () => {});
+    return () => { active = false; };
+  }, [venue.logoUrl]);
+  const photoH = small ? 100 : 120;
+  const LOGO_H = small ? 56 : 64;
+  const logoW = Math.round(LOGO_H * Math.min(1.8, Math.max(0.6, logoAspect)));
+  const logoTop = Math.round(photoH - LOGO_H * (2 / 3));
+
   return (
     <Pressable style={styles.card} onPress={onPress}>
       {/* Photo */}
@@ -136,9 +149,9 @@ export default function MapVenuePreviewCard({ venue, onPress, onClose, isFavorit
 
       {/* Logo — centré, chevauche le bas de la photo (2/3 dessus, 1/3 dessous) */}
       {venue.logoUrl ? (
-        <View style={[styles.logoWrap, small && styles.logoWrapSmall]} pointerEvents="none">
-          <View style={styles.logoAvatar}>
-            <Image source={{ uri: venue.logoUrl }} style={styles.logoImg} resizeMode="contain" />
+        <View style={[styles.logoWrap, { top: logoTop }]} pointerEvents="none">
+          <View style={[styles.logoAvatar, { width: logoW, height: LOGO_H }]}>
+            <Image source={{ uri: venue.logoUrl }} style={styles.logoImg} resizeMode="cover" />
           </View>
         </View>
       ) : null}
@@ -259,16 +272,12 @@ const styles = StyleSheet.create({
   },
 
   /* Logo centré chevauchant le bas de la photo */
-  logoWrap: { position: "absolute", top: 77, left: 0, right: 0, alignItems: "center", zIndex: 5 },
-  logoWrapSmall: { top: 57 },
+  logoWrap: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 5 },
   logoAvatar: {
-    width: 64,
-    height: 64,
     borderRadius: 18,
     borderWidth: 3,
     borderColor: Pastel.surface,
     backgroundColor: "#FFFFFF",
-    padding: 5,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.2,

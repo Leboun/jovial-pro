@@ -181,6 +181,8 @@ export default function VenueScreen() {
   // Visible à l'ouverture de la fiche ; masqué dès qu'on interagit (clic bouton,
   // réservation, ouverture d'un événement). Ne réapparaît qu'à une nouvelle ouverture de fiche.
   const [eventHintVisible, setEventHintVisible] = useState(true);
+  // Le logo adopte ses proportions reelles (carre/rectangle), largeur max 1,8x la hauteur
+  const [logoAspect, setLogoAspect] = useState<number>(1);
   const scrollToEvents = () => {
     setEventHintVisible(false);
     scrollRef.current?.scrollTo({ y: Math.max(contentCardY.current + eventsOffsetY.current - 12, 0), animated: true });
@@ -1091,9 +1093,19 @@ export default function VenueScreen() {
         <View style={styles.contentCard} onLayout={(e) => { contentCardY.current = e.nativeEvent.layout.y; }}>
 
           {/* Logo — chevauche la couverture, style Club */}
-          <View style={styles.venueLogo}>
+          <View style={[styles.venueLogo, venue.logo_url ? { width: 84 * Math.min(1.8, Math.max(0.6, logoAspect)) } : null]}>
             {venue.logo_url && isHttpUrlString(venue.logo_url) ? (
-              <Image source={venue.logo_url} style={styles.venueAvatarImg} contentFit="contain" transition={150} />
+              <Image
+                source={venue.logo_url}
+                style={styles.venueAvatarImg}
+                contentFit="cover"
+                transition={150}
+                onLoad={(e: any) => {
+                  const w = e?.source?.width;
+                  const h = e?.source?.height;
+                  if (w && h) setLogoAspect(w / h);
+                }}
+              />
             ) : (
               <Text style={styles.venueLogoLetter}>
                 {(venue.name ?? "?").trim().charAt(0).toUpperCase()}
@@ -1643,7 +1655,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Pastel.background,
     backgroundColor: "#FFFFFF",
-    padding: 6,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
