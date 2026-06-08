@@ -1152,7 +1152,7 @@ export default function EstablishmentProfileScreen() {
           <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>📍</Text></View>
           <View style={styles.sectionHeaderText}>
             <Text style={styles.cardTitle}>Emoji sur la carte</Text>
-            <Text style={styles.cardHint}>L'emoji affiché dans ton pin sur la carte. « Auto » = selon ton activité principale.</Text>
+            <Text style={styles.cardHint}>Le « pin », c'est le petit repère rond qui marque ton établissement sur la carte Jovial. Choisis ici l'emoji affiché à l'intérieur — « Auto » prend automatiquement celui de ton activité principale.</Text>
           </View>
         </View>
         <PickerField
