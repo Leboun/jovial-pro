@@ -24,6 +24,7 @@ export type EstablishmentProfile = {
   social_url: string | null;
   cover_url: string | null;
   logo_url: string | null;
+  pin_emoji: string | null;
   photos: string[] | null;
   opening_hours: Record<string, { open: string; close: string }[]> | null;
   timezone: string | null;
@@ -109,7 +110,7 @@ let previewEstablishment: EstablishmentProfile | null = null;
 let previewEvents: EstablishmentEvent[] = [];
 let previewSubscription: EstablishmentSubscription | null = null;
 const ESTABLISHMENT_SELECT =
-  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, logo_url, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, darts_targets_count, lat, lng";
+  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, logo_url, pin_emoji, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, darts_targets_count, lat, lng";
 const SUBSCRIPTION_SELECT =
   "id, venue_id, plan, status, current_period_end, events_quota_year, events_used_year, tournaments_used_year, boosts_used_year, local_spotlight_used_year, targeted_notifications_used_year, stripe_customer_id, stripe_subscription_id, stripe_price_id";
 
@@ -139,6 +140,7 @@ const ensurePreviewState = (userId: string) => {
       social_url: "https://facebook.com/jovial.app",
       cover_url: null,
       logo_url: null,
+      pin_emoji: null,
       photos: [],
       opening_hours: {
         thu: [{ open: "18:00", close: "01:00" }],

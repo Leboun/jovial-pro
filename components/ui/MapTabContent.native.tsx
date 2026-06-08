@@ -24,6 +24,7 @@ type Venue = {
   lng: number;
   cover_url?: string | null;
   logo_url?: string | null;
+  pin_emoji?: string | null;
   photos?: string[];
   tags?: string[];
   activities?: string[];
@@ -176,7 +177,7 @@ function getPinTone(venue: Venue): PinTone {
 function VenuePin({ venue, isActive, isFavorite, isSpotlight }: { venue: Venue; isActive: boolean; isFavorite: boolean; isSpotlight: boolean }) {
   const hasActivities = (venue.activities?.length ?? 0) > 0;
   const isEventOnly = !hasActivities && !!venue.nextEvent;
-  const emoji = isEventOnly ? "📅" : pickActivityEmoji(venue);
+  const emoji = venue.pin_emoji ? venue.pin_emoji : (isEventOnly ? "📅" : pickActivityEmoji(venue));
   const tone = getPinTone(venue);
 
   const strokeColor = isSpotlight
@@ -387,7 +388,7 @@ export default function MapTabContentNative() {
         const [{ data, error }, { data: eventRows }] = await Promise.all([
           supabase
             .from("venues")
-            .select("id, name, lat, lng, cover_url, logo_url, photos, tags, activities, venue_type, address, city, postcode, contact, opening_hours, timezone, social_platform, social_url")
+            .select("id, name, lat, lng, cover_url, logo_url, pin_emoji, photos, tags, activities, venue_type, address, city, postcode, contact, opening_hours, timezone, social_platform, social_url")
             .not("lat", "is", null)
             .not("lng", "is", null),
           supabase
@@ -418,6 +419,7 @@ export default function MapTabContentNative() {
             lng: toNumber(row.lng),
             cover_url: row.cover_url ?? null,
             logo_url: row.logo_url ?? null,
+            pin_emoji: row.pin_emoji ?? null,
             photos: Array.isArray(row.photos) ? row.photos.filter(Boolean) : [],
             tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
             activities: Array.isArray(row.activities) ? row.activities.filter(Boolean) : [],

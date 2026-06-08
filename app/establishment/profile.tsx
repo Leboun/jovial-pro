@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import JovialProShell from "@/components/ui/JovialProShell";
+import PickerField, { PickerGroup, PickerOption } from "@/components/ui/PickerField";
 import { isEstablishmentPreviewEnabled } from "@/constants/establishmentPreview";
 import { getOfferByKey, resolveOfferKey, type JovialProOfferKey } from "@/constants/jovialPro";
 import { useAuth } from "@/providers/AuthProvider";
@@ -210,6 +211,41 @@ const SERVICE_TAGS_OPTIONS = [
 ];
 const SERVICE_TAGS_MAX = 4;
 
+// Options pour les menus déroulants de "Ma fiche"
+const VENUE_TYPE_PICKER_GROUPS: PickerGroup[] = VENUE_TYPE_GROUPS.map((g) => ({
+  label: g.label,
+  options: g.types.map((t) => ({ value: t, label: t })),
+}));
+const VENUE_AMBIANCE_PICKER: PickerOption[] = VENUE_AMBIANCE_OPTIONS.map((a) => ({ value: a, label: a }));
+const SERVICE_TAGS_PICKER: PickerOption[] = SERVICE_TAGS_OPTIONS.map((s) => ({ value: s, label: s }));
+const PIN_EMOJI_OPTIONS: PickerOption[] = [
+  { value: "", label: "Auto (selon l'activité principale)" },
+  { value: "🎯", label: "Fléchettes", emoji: "🎯" },
+  { value: "🎱", label: "Billard", emoji: "🎱" },
+  { value: "⚽", label: "Baby-foot", emoji: "⚽" },
+  { value: "🥏", label: "Palet / Pétanque", emoji: "🥏" },
+  { value: "🎳", label: "Bowling", emoji: "🎳" },
+  { value: "🍺", label: "Beer pong", emoji: "🍺" },
+  { value: "🪓", label: "Lancer de hache", emoji: "🪓" },
+  { value: "🏓", label: "Ping-pong", emoji: "🏓" },
+  { value: "♟️", label: "Échecs", emoji: "♟️" },
+  { value: "🃏", label: "Cartes / Poker", emoji: "🃏" },
+  { value: "🎲", label: "Jeux de société", emoji: "🎲" },
+  { value: "🕹️", label: "Arcade / Rétro", emoji: "🕹️" },
+  { value: "🎮", label: "Jeux vidéo", emoji: "🎮" },
+  { value: "🎤", label: "Karaoké", emoji: "🎤" },
+  { value: "🎵", label: "Blind test / Quiz", emoji: "🎵" },
+  { value: "🏆", label: "Tournoi", emoji: "🏆" },
+  { value: "🎸", label: "Concert / Live", emoji: "🎸" },
+  { value: "🎧", label: "DJ / Soirée", emoji: "🎧" },
+  { value: "🎬", label: "Diffusion sport", emoji: "🎬" },
+  { value: "🎉", label: "Festif", emoji: "🎉" },
+  { value: "🍻", label: "Bar / Pub", emoji: "🍻" },
+  { value: "🍷", label: "Bar à vin", emoji: "🍷" },
+  { value: "🍸", label: "Cocktails", emoji: "🍸" },
+  { value: "☕", label: "Café / Détente", emoji: "☕" },
+];
+
 const DAY_CACHE_KEY = "establishment_weekdays_v1";
 const TIME_CACHE_KEY = "establishment_time_slots_v1";
 
@@ -274,11 +310,12 @@ const formatDisplayedTime = (
   relatedOpenValue?: string | null
 ) => {
   if (!value) return "";
-  if (field !== "close") return value;
+  const display = value === "00:00" ? "Minuit" : value;
+  if (field !== "close") return display;
   const closeMinutes = toMinutes(value);
   const openMinutes = toMinutes(relatedOpenValue);
-  if (closeMinutes == null || openMinutes == null) return value;
-  return closeMinutes <= openMinutes ? `${value} (lendemain)` : value;
+  if (closeMinutes == null || openMinutes == null) return display;
+  return closeMinutes <= openMinutes ? `${display} (lendemain)` : display;
 };
 
 const normalizeTagValue = (value: string) =>
@@ -344,6 +381,7 @@ export default function EstablishmentProfileScreen() {
     venue_type: "" as string,
     venue_ambiance: [] as string[],
     service_tags: [] as string[],
+    pin_emoji: "" as string,
     opening_hours: buildEmptySlots(),
   });
 
@@ -526,6 +564,7 @@ export default function EstablishmentProfileScreen() {
       venue_type: establishment?.venue_type ?? "",
       venue_ambiance: Array.isArray(establishment?.venue_ambiance) ? establishment.venue_ambiance.filter(Boolean) : [],
       service_tags: Array.isArray(establishment?.service_tags) ? establishment.service_tags.filter(Boolean) : [],
+      pin_emoji: establishment?.pin_emoji ?? "",
       opening_hours: slotsFromOpeningHours(establishment?.opening_hours ?? null),
     });
   };
@@ -817,6 +856,7 @@ export default function EstablishmentProfileScreen() {
         venue_type: form.venue_type || null,
         venue_ambiance: form.venue_ambiance.length > 0 ? form.venue_ambiance : null,
         service_tags: form.service_tags.length > 0 ? form.service_tags : null,
+        pin_emoji: form.pin_emoji || null,
         lat,
         lng,
         opening_hours: normalizeOpeningHours(form.opening_hours),
@@ -891,23 +931,28 @@ export default function EstablishmentProfileScreen() {
         </View>
       }
     >
-      <View style={styles.heroCard}>
-        <View style={styles.heroText}>
-          <Text style={styles.heroEyebrow}>Fiche etablissement</Text>
-          <Text style={styles.heroTitle}>Prepare une fiche claire et a jour</Text>
-          <Text style={styles.heroDescription}>
-            Cette page sert a presenter le lieu avec son adresse complete, ses coordonnees GPS pour la carte, ses reseaux, ses tags et ses horaires, y compris une fermeture le lendemain.
-          </Text>
-        </View>
-        <Pressable style={styles.primaryButton} onPress={handleSave} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>
-              {ficheComplete ? "Mettre a jour mon etablissement" : "Enregistrer ma fiche"}
+      {/* Barre de progression */}
+      <View style={styles.progressBlock}>
+        <View style={styles.progressHeader}>
+          <View style={styles.progressHeaderLeft}>
+            <Text style={styles.progressTitle}>
+              {completedFields === PROFILE_COMPLETION_BLOCKS
+                ? "✓ Fiche complète"
+                : `${completedFields} / ${PROFILE_COMPLETION_BLOCKS} sections complétées`}
             </Text>
-          )}
-        </Pressable>
+            <Text style={styles.progressSub}>
+              {completedFields === PROFILE_COMPLETION_BLOCKS
+                ? "Ton établissement est bien visible sur Jovial."
+                : "Complete chaque section pour maximiser ta visibilité sur la carte Jovial."}
+            </Text>
+          </View>
+          <Pressable style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+            {saving ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.saveBtnText}>Enregistrer</Text>}
+          </Pressable>
+        </View>
+        <View style={styles.progressBarTrack}>
+          <View style={[styles.progressBarFill, { width: `${(completedFields / PROFILE_COMPLETION_BLOCKS) * 100}%` as any }]} />
+        </View>
       </View>
 
       {saveMessage && (
@@ -925,8 +970,13 @@ export default function EstablishmentProfileScreen() {
 
       <View style={styles.grid}>
         <View style={[styles.card, styles.gridCard]}>
-          <Text style={styles.cardTitle}>Identite du lieu</Text>
-          <Text style={styles.cardHint}>Les informations de base visibles par les clients.</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>1</Text></View>
+            <View style={styles.sectionHeaderText}>
+              <Text style={styles.cardTitle}>Identité du lieu <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.cardHint}>Nom, adresse et description — les infos de base visibles par tous les utilisateurs Jovial.</Text>
+            </View>
+          </View>
           <TextInput
             value={placeQuery}
             onChangeText={setPlaceQuery}
@@ -1006,8 +1056,13 @@ export default function EstablishmentProfileScreen() {
         </View>
 
         <View style={[styles.card, styles.gridCard]}>
-          <Text style={styles.cardTitle}>Coordonnees</Text>
-          <Text style={styles.cardHint}>Comment contacter ou retrouver l'etablissement.</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>2</Text></View>
+            <View style={styles.sectionHeaderText}>
+              <Text style={styles.cardTitle}>Coordonnées <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.cardHint}>Téléphone, site web et réseaux sociaux — pour que les clients puissent te contacter directement.</Text>
+            </View>
+          </View>
           <TextInput
             value={form.phone}
             onChangeText={(value) => setForm((prev) => ({ ...prev, phone: value }))}
@@ -1075,159 +1130,102 @@ export default function EstablishmentProfileScreen() {
 
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Type de lieu</Text>
-        <Text style={styles.cardHint}>
-          Sélectionne le type qui décrit le mieux ton établissement. Il sera affiché sur ta fiche dans l'application.
-        </Text>
-        {VENUE_TYPE_GROUPS.map((group) => (
-          <View key={group.label} style={styles.venueTypeGroup}>
-            <Text style={styles.venueTypeGroupLabel}>{group.label}</Text>
-            <View style={styles.suggestionsRow}>
-              {group.types.map((type) => {
-                const active = form.venue_type === type;
-                return (
-                  <Pressable
-                    key={type}
-                    style={[styles.suggestionChip, active ? styles.venueTypeChipActive : null]}
-                    onPress={() =>
-                      setForm((prev) => ({ ...prev, venue_type: active ? "" : type }))
-                    }
-                  >
-                    <Text style={[styles.suggestionChipText, active ? styles.venueTypeChipTextActive : null]}>
-                      {type}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>3</Text></View>
+          <View style={styles.sectionHeaderText}>
+            <Text style={styles.cardTitle}>Type de lieu <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.cardHint}>Sélectionne le type qui décrit le mieux ton établissement — il apparaît sur ta fiche et aide les utilisateurs à te trouver dans les bons filtres.</Text>
           </View>
-        ))}
-        {form.venue_type ? (
-          <View style={styles.venueTypeSelected}>
-            <Ionicons name="checkmark-circle" size={16} color={"#111827"} />
-            <Text style={styles.venueTypeSelectedText}>{form.venue_type}</Text>
-            <Pressable onPress={() => setForm((prev) => ({ ...prev, venue_type: "" }))} hitSlop={8}>
-              <Ionicons name="close" size={14} color={"#9CA3AF"} />
-            </Pressable>
+        </View>
+        <PickerField
+          value={form.venue_type}
+          onChange={(v) => setForm((prev) => ({ ...prev, venue_type: v }))}
+          groups={VENUE_TYPE_PICKER_GROUPS}
+          placeholder="Choisir un type de lieu…"
+          modalTitle="Type de lieu"
+        />
+      </View>
+
+      {/* Emoji sur la carte */}
+      <View style={styles.card}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>📍</Text></View>
+          <View style={styles.sectionHeaderText}>
+            <Text style={styles.cardTitle}>Emoji sur la carte</Text>
+            <Text style={styles.cardHint}>L'emoji affiché dans ton pin sur la carte. « Auto » = selon ton activité principale.</Text>
           </View>
-        ) : (
-          <Text style={styles.fieldHint}>Aucun type sélectionné.</Text>
-        )}
+        </View>
+        <PickerField
+          value={form.pin_emoji}
+          onChange={(v) => setForm((prev) => ({ ...prev, pin_emoji: v }))}
+          options={PIN_EMOJI_OPTIONS}
+          placeholder="Auto (selon l'activité principale)"
+          modalTitle="Emoji du pin"
+        />
       </View>
 
       <View style={styles.card}>
         <View style={styles.tagHeader}>
           <View style={styles.tagHeaderText}>
-            <Text style={styles.cardTitle}>Ambiance</Text>
-            <Text style={styles.cardHint}>
-              Choisissez jusqu'à {AMBIANCE_MAX} ambiances qui caractérisent le mieux l'atmosphère de votre lieu.
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>4</Text></View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.cardTitle}>Ambiance</Text>
+                <Text style={styles.cardHint}>Choisis jusqu'à {AMBIANCE_MAX} ambiances — elles aident les utilisateurs Jovial à trouver des lieux qui correspondent à leur humeur du moment.</Text>
+              </View>
+            </View>
           </View>
           <View style={styles.tagLimitCard}>
             <Text style={styles.tagLimitValue}>{form.venue_ambiance.length}/{AMBIANCE_MAX}</Text>
             <Text style={styles.tagLimitLabel}>ambiances</Text>
           </View>
         </View>
-        <View style={styles.suggestionsRow}>
-          {VENUE_AMBIANCE_OPTIONS.map((ambiance) => {
-            const active = form.venue_ambiance.includes(ambiance);
-            const disabled = !active && form.venue_ambiance.length >= AMBIANCE_MAX;
-            return (
-              <Pressable
-                key={ambiance}
-                style={[
-                  styles.suggestionChip,
-                  active ? styles.suggestionChipActive : null,
-                  disabled ? styles.suggestionChipDisabled : null,
-                ]}
-                onPress={() => {
-                  if (active) {
-                    setForm((prev) => ({
-                      ...prev,
-                      venue_ambiance: prev.venue_ambiance.filter((a) => a !== ambiance),
-                    }));
-                  } else if (!disabled) {
-                    setForm((prev) => ({
-                      ...prev,
-                      venue_ambiance: [...prev.venue_ambiance, ambiance],
-                    }));
-                  }
-                }}
-                disabled={disabled}
-              >
-                <Text style={[styles.suggestionChipText, active ? styles.suggestionChipTextActive : null]}>
-                  {ambiance}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {form.venue_ambiance.length === 0 && (
-          <Text style={styles.fieldHint}>Aucune ambiance sélectionnée.</Text>
-        )}
+        <PickerField
+          value={form.venue_ambiance}
+          onChange={(v) => setForm((prev) => ({ ...prev, venue_ambiance: v }))}
+          multi
+          max={AMBIANCE_MAX}
+          options={VENUE_AMBIANCE_PICKER}
+          placeholder="Choisir des ambiances…"
+          modalTitle="Ambiance"
+        />
       </View>
 
       <View style={styles.card}>
         <View style={styles.tagHeader}>
           <View style={styles.tagHeaderText}>
-            <Text style={styles.cardTitle}>Services</Text>
-            <Text style={styles.cardHint}>
-              Choisissez jusqu'à {SERVICE_TAGS_MAX} services ou équipements disponibles dans votre établissement.
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>5</Text></View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.cardTitle}>Services & équipements</Text>
+                <Text style={styles.cardHint}>Choisis jusqu'à {SERVICE_TAGS_MAX} services disponibles — terrasse, Wi-Fi, réservation... autant d'éléments qui influencent le choix d'un utilisateur.</Text>
+              </View>
+            </View>
           </View>
           <View style={styles.tagLimitCard}>
             <Text style={styles.tagLimitValue}>{form.service_tags.length}/{SERVICE_TAGS_MAX}</Text>
             <Text style={styles.tagLimitLabel}>services</Text>
           </View>
         </View>
-        <View style={styles.suggestionsRow}>
-          {SERVICE_TAGS_OPTIONS.map((service) => {
-            const active = form.service_tags.includes(service);
-            const disabled = !active && form.service_tags.length >= SERVICE_TAGS_MAX;
-            return (
-              <Pressable
-                key={service}
-                style={[
-                  styles.suggestionChip,
-                  active ? styles.suggestionChipActive : null,
-                  disabled ? styles.suggestionChipDisabled : null,
-                ]}
-                onPress={() => {
-                  if (active) {
-                    setForm((prev) => ({
-                      ...prev,
-                      service_tags: prev.service_tags.filter((s) => s !== service),
-                    }));
-                  } else if (!disabled) {
-                    setForm((prev) => ({
-                      ...prev,
-                      service_tags: [...prev.service_tags, service],
-                    }));
-                  }
-                }}
-                disabled={disabled}
-              >
-                <Text style={[styles.suggestionChipText, active ? styles.suggestionChipTextActive : null]}>
-                  {service}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {form.service_tags.length === 0 && (
-          <Text style={styles.fieldHint}>Aucun service sélectionné.</Text>
-        )}
+        <PickerField
+          value={form.service_tags}
+          onChange={(v) => setForm((prev) => ({ ...prev, service_tags: v }))}
+          multi
+          max={SERVICE_TAGS_MAX}
+          options={SERVICE_TAGS_PICKER}
+          placeholder="Choisir des services…"
+          modalTitle="Services & équipements"
+        />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Horaires d'ouverture</Text>
-        <Text style={styles.cardHint}>
-          Definis jusqu'a 3 creneaux par jour. Laisse vide si le lieu est ferme ce jour-la.
-        </Text>
-        <Text style={styles.cardHint}>
-          Pour une fermeture apres minuit, choisis simplement une heure plus petite que l'ouverture.
-          Exemple: `18:00 - 03:00` sera interprete comme une fermeture le lendemain.
-        </Text>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>6</Text></View>
+          <View style={styles.sectionHeaderText}>
+            <Text style={styles.cardTitle}>Horaires d'ouverture <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.cardHint}>Définis jusqu'à 3 créneaux par jour. Laisse vide si l'établissement est fermé ce jour-là. Pour une fermeture après minuit, choisis simplement une heure de fermeture inférieure à l'heure d'ouverture (ex: 18:00 → 03:00).</Text>
+          </View>
+        </View>
 
         <View style={styles.daysTabs}>
           {dayOptions.map((day) => {
@@ -1293,12 +1291,23 @@ export default function EstablishmentProfileScreen() {
         </View>
       </View>
 
+      {saveMessage && (
+        <View style={[styles.saveBanner, saveMessage.type === "success" ? styles.saveBannerSuccess : styles.saveBannerError]}>
+          <Ionicons
+            name={saveMessage.type === "success" ? "checkmark-circle" : "alert-circle"}
+            size={18}
+            color={saveMessage.type === "success" ? "#1a7a4a" : "#b91c1c"}
+          />
+          <Text style={[styles.saveBannerText, saveMessage.type === "success" ? styles.saveBannerTextSuccess : styles.saveBannerTextError]}>
+            {saveMessage.text}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.footerRow}>
-        <Text style={styles.footerStatus}>
-          Pense a enregistrer apres modification.
-        </Text>
+        <Text style={styles.footerStatus}>Pense à enregistrer après chaque modification.</Text>
         <Pressable style={styles.primaryButton} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Mettre a jour</Text>}
+          {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Enregistrer</Text>}
         </Pressable>
       </View>
 
@@ -1316,21 +1325,28 @@ export default function EstablishmentProfileScreen() {
               <Pressable style={styles.timePickerOption} onPress={() => applyTimeSelection("")}>
                 <Text style={styles.timePickerOptionText}>Aucun</Text>
               </Pressable>
-              {timeOptions.map((time) => (
-                <Pressable
-                  key={time}
-                  style={styles.timePickerOption}
-                  onPress={() => applyTimeSelection(time)}
-                >
-                  <Text style={styles.timePickerOptionText}>
-                    {formatDisplayedTime(
-                      time,
-                      timePicker?.field ?? "open",
-                      timePicker ? form.opening_hours[timePicker.day][timePicker.slotIndex]?.open : null
-                    )}
-                  </Text>
-                </Pressable>
-              ))}
+              {(() => {
+                const isClose = timePicker?.field === "close";
+                const openVal = timePicker ? form.opening_hours[timePicker.day][timePicker.slotIndex]?.open : null;
+                const openMins = toMinutes(openVal) ?? 0;
+                const sorted = isClose
+                  ? [
+                      ...timeOptions.filter((t) => (toMinutes(t) ?? 0) > openMins),
+                      ...timeOptions.filter((t) => (toMinutes(t) ?? 0) <= openMins),
+                    ]
+                  : timeOptions;
+                return sorted.map((time) => (
+                  <Pressable
+                    key={time}
+                    style={styles.timePickerOption}
+                    onPress={() => applyTimeSelection(time)}
+                  >
+                    <Text style={styles.timePickerOptionText}>
+                      {formatDisplayedTime(time, timePicker?.field ?? "open", openVal)}
+                    </Text>
+                  </Pressable>
+                ));
+              })()}
             </ScrollView>
           </View>
         </Pressable>
@@ -1401,22 +1417,38 @@ const styles = StyleSheet.create({
   progressValue: { color: "#111827", fontSize: 24, fontWeight: "800" },
   progressLabel: { color: "#9CA3AF", fontSize: 11, fontWeight: "700", textAlign: "center" },
   progressMeta: { color: "#111827", fontSize: 11, fontWeight: "800", textAlign: "center" },
-  heroCard: {
+  // Barre de progression
+  progressBlock: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 16,
-    flexWrap: "wrap",
+    padding: 18,
+    gap: 12,
   },
-  heroText: { gap: 8, flex: 1, minWidth: 280 },
-  heroEyebrow: { color: "#111827", fontSize: 12, fontWeight: "800", textTransform: "uppercase" },
-  heroTitle: { color: "#111827", fontSize: 28, fontWeight: "800" },
-  heroDescription: { color: "#9CA3AF", fontSize: 14, lineHeight: 21, maxWidth: 640 },
+  progressHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
+  progressHeaderLeft: { flex: 1, gap: 4, minWidth: 200 },
+  progressTitle: { color: "#111827", fontSize: 16, fontWeight: "800" },
+  progressSub: { color: "#6B7280", fontSize: 13, lineHeight: 18 },
+  progressBarTrack: { height: 6, backgroundColor: "#E5E7EB", borderRadius: 99, overflow: "hidden" },
+  progressBarFill: { height: "100%", backgroundColor: "#5CB6AC", borderRadius: 99 },
+  saveBtn: { backgroundColor: "#2B4E93", borderRadius: 14, paddingHorizontal: 18, paddingVertical: 12, alignItems: "center" },
+  saveBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+
+  // Numéros de section
+  sectionHeader: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  sectionHeaderText: { flex: 1, gap: 4 },
+  sectionBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#5CB6AC",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  sectionBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
+  required: { color: "#5CB6AC", fontSize: 14 },
   grid: { flexDirection: "row", gap: 16, flexWrap: "wrap" },
   card: {
     backgroundColor: "#FFFFFF",
