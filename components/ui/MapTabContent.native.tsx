@@ -563,7 +563,7 @@ export default function MapTabContentNative() {
       {bannerVisible && !previewVisible ? (
         <View style={styles.suggestBanner}>
           <View style={styles.suggestBannerContent}>
-            <Text style={styles.suggestBannerTitle}>📍 Ton bar n'est pas sur la carte ?</Text>
+            <Text style={styles.suggestBannerTitle}>📍 Ton établissement préféré n'est pas encore sur la carte ?</Text>
             <Text style={styles.suggestBannerSub}>Propose-le et gagne 3 mois Premium offerts</Text>
           </View>
           <Pressable style={styles.suggestBannerBtn} onPress={openSuggestForm}>
