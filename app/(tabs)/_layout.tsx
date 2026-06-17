@@ -8,6 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/providers/AuthProvider";
 import { isDesktopWeb } from "@/utils/platform";
 import { supabase } from "@/services/supabase";
+import { onNotificationsChanged } from "@/utils/notifEvents";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
 
@@ -18,26 +19,28 @@ function useUnreadCount(userId: string | null) {
 
   useEffect(() => {
     if (!userId) { setCount(0); return; }
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("read", false)
-      .then(({ count: c }) => setCount(c ?? 0));
 
+    const fetchCount = () => {
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("read", false)
+        .then(({ count: c }) => setCount(c ?? 0));
+    };
+
+    fetchCount();
+
+    // Temps reel Supabase (si active) : nouvelles notifs / changements distants.
     const channel = supabase
       .channel(`notif-badge-${userId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, () => {
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .eq("read", false)
-          .then(({ count: c }) => setCount(c ?? 0));
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, fetchCount)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Signal interne : marquage "lu" depuis l'ecran Notifications -> on recompte aussitot.
+    const off = onNotificationsChanged(fetchCount);
+
+    return () => { supabase.removeChannel(channel); off(); };
   }, [userId]);
 
   return count;
@@ -152,7 +155,7 @@ export default function TabsLayout() {
             <Ionicons name="notifications-outline" size={size} color={color} />
           ),
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : undefined,
-          tabBarBadgeStyle: { backgroundColor: Pastel.primary, fontSize: 10, minWidth: 16, height: 16 },
+          tabBarBadgeStyle: { backgroundColor: "#EF4444", color: "#FFFFFF", fontSize: 10, minWidth: 16, height: 16 },
         }}
       />
 

@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -17,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import JovialProShell from "@/components/ui/JovialProShell";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEstablishment } from "@/providers/EstablishmentProvider";
+import { Pastel } from "@/constants/pastel";
+import { Font } from "@/constants/typography";
 import {
   approvePost,
   Club,
@@ -252,18 +253,20 @@ export default function ClubJovialScreen() {
             <Text style={styles.fieldHint}>{newDescription.length}/300 caractères</Text>
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchLabel}>
-              <Text style={styles.fieldLabel}>Club privé</Text>
-              <Text style={styles.fieldHint}>
-                Les membres doivent rejoindre pour voir les publications.
-              </Text>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Confidentialité</Text>
+            <View style={styles.privacyRow}>
+              <Pressable style={[styles.privacyCard, !newIsPrivate && styles.privacyCardActive]} onPress={() => setNewIsPrivate(false)}>
+                <Ionicons name="globe-outline" size={18} color={!newIsPrivate ? Pastel.teal : Pastel.textMuted} />
+                <Text style={[styles.privacyLabel, !newIsPrivate && styles.privacyLabelActive]}>Public</Text>
+                <Text style={styles.privacyDesc}>Tout le monde peut voir les publications.</Text>
+              </Pressable>
+              <Pressable style={[styles.privacyCard, newIsPrivate && styles.privacyCardPrivate]} onPress={() => setNewIsPrivate(true)}>
+                <Ionicons name="lock-closed-outline" size={18} color={newIsPrivate ? Pastel.primary : Pastel.textMuted} />
+                <Text style={[styles.privacyLabel, newIsPrivate && { color: Pastel.primary }]}>Privé</Text>
+                <Text style={styles.privacyDesc}>Les membres doivent rejoindre pour voir.</Text>
+              </Pressable>
             </View>
-            <Switch
-              value={newIsPrivate}
-              onValueChange={setNewIsPrivate}
-              trackColor={{ true: "#111827" }}
-            />
           </View>
 
           <Pressable
@@ -320,15 +323,20 @@ export default function ClubJovialScreen() {
               <Text style={styles.clubName}>{club.name}</Text>
               {club.is_private ? (
                 <View style={styles.privatePill}>
-                  <Ionicons name="lock-closed" size={11} color={"#111827"} />
+                  <Ionicons name="lock-closed" size={11} color={Pastel.primary} />
                   <Text style={styles.privatePillText}>Privé</Text>
                 </View>
               ) : (
                 <View style={styles.publicPill}>
-                  <Ionicons name="globe-outline" size={11} color="#1E7A36" />
+                  <Ionicons name="globe-outline" size={11} color={Pastel.teal} />
                   <Text style={styles.publicPillText}>Public</Text>
                 </View>
               )}
+            </View>
+            {/* Badge Club Officiel */}
+            <View style={styles.officialBadge}>
+              <Ionicons name="shield-checkmark" size={13} color={Pastel.teal} />
+              <Text style={styles.officialBadgeText}>Club Officiel Jovial</Text>
             </View>
             {club.description ? (
               <Text style={styles.clubDescription} numberOfLines={2}>
@@ -515,281 +523,98 @@ function PostCard({ post, isPending, onTogglePin, onApprove, onDelete }: PostCar
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#F8F9FA",
-    padding: 20,
-  },
-  centerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  errorText: { color: "#EF4444", fontSize: 13, fontWeight: "600" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 20 },
+  centerTitle: { fontSize: 20, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
+  errorText: { color: "#EF4444", fontSize: 13, fontFamily: Font.semiBold, includeFontPadding: false },
 
-  // ── Upgrade wall ──
-  lockCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 28,
-    gap: 16,
-    maxWidth: 560,
-  },
-  lockIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lockTitle: { color: "#111827", fontSize: 26, fontWeight: "800" },
-  lockText: { color: "#9CA3AF", fontSize: 14, lineHeight: 22 },
+  // Upgrade wall
+  lockCard: { backgroundColor: Pastel.surface, borderRadius: 24, borderWidth: 1, borderColor: Pastel.border, padding: 24, gap: 16, maxWidth: 560 },
+  lockIcon: { width: 60, height: 60, borderRadius: 18, backgroundColor: Pastel.primarySoft, alignItems: "center", justifyContent: "center" },
+  lockTitle: { color: Pastel.text, fontSize: 24, fontFamily: Font.extraBold, includeFontPadding: false },
+  lockText: { color: Pastel.textMuted, fontSize: 14, lineHeight: 21, includeFontPadding: false },
   lockFeatures: { gap: 10 },
   lockFeatureRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  lockFeatureText: { color: "#111827", fontSize: 14, flex: 1 },
+  lockFeatureText: { color: Pastel.text, fontSize: 14, flex: 1, fontFamily: Font.regular, includeFontPadding: false },
 
-  // ── Création ──
-  createCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 24,
-    gap: 16,
-    maxWidth: 600,
-  },
-  createTitle: { color: "#111827", fontSize: 24, fontWeight: "800" },
-  createSubtitle: { color: "#9CA3AF", fontSize: 14, lineHeight: 21 },
-  field: { gap: 6 },
-  fieldLabel: { color: "#111827", fontSize: 13, fontWeight: "700" },
-  fieldHint: { color: "#9CA3AF", fontSize: 11 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    color: "#111827",
-    backgroundColor: "#F3F4F6",
-    fontSize: 14,
-  },
+  // Création
+  createCard: { backgroundColor: Pastel.surface, borderRadius: 24, borderWidth: 1, borderColor: Pastel.border, padding: 22, gap: 18, maxWidth: 600 },
+  createTitle: { color: Pastel.text, fontSize: 22, fontFamily: Font.extraBold, includeFontPadding: false },
+  createSubtitle: { color: Pastel.textMuted, fontSize: 14, lineHeight: 20, includeFontPadding: false },
+  field: { gap: 8 },
+  fieldLabel: { color: Pastel.text, fontSize: 13, fontFamily: Font.extraBold, includeFontPadding: false },
+  fieldHint: { color: Pastel.textMuted, fontSize: 11, includeFontPadding: false },
+  input: { borderWidth: 1, borderColor: Pastel.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, color: Pastel.text, backgroundColor: Pastel.surfaceAlt, fontSize: 14, fontFamily: Font.regular },
   textArea: { minHeight: 90, textAlignVertical: "top" },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  switchLabel: { flex: 1, gap: 3 },
+  privacyRow: { flexDirection: "row", gap: 10 },
+  privacyCard: { flex: 1, borderRadius: 14, borderWidth: 1, borderColor: Pastel.border, backgroundColor: Pastel.surfaceAlt, padding: 12, gap: 4, alignItems: "center" },
+  privacyCardActive: { borderColor: Pastel.teal, backgroundColor: Pastel.tealSoft },
+  privacyCardPrivate: { borderColor: Pastel.primary, backgroundColor: Pastel.primarySoft },
+  privacyLabel: { color: Pastel.text, fontSize: 13, fontFamily: Font.extraBold, includeFontPadding: false },
+  privacyLabelActive: { color: Pastel.teal },
+  privacyDesc: { color: Pastel.textMuted, fontSize: 11, textAlign: "center", lineHeight: 15, includeFontPadding: false },
 
-  // ── En-tête club ──
-  clubHeader: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
-  },
+  // En-tête club
+  clubHeader: { backgroundColor: Pastel.surface, borderRadius: 22, borderWidth: 1, borderColor: Pastel.border, overflow: "hidden" },
   clubCover: { width: "100%", height: 140 },
-  clubCoverPlaceholder: {
-    height: 100,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  clubCoverPlaceholderText: { color: "#9CA3AF", fontSize: 12 },
-  clubMeta: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    padding: 16,
-    paddingTop: 12,
-  },
-  clubAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  clubAvatarPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
+  clubCoverPlaceholder: { height: 90, backgroundColor: Pastel.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 6, borderBottomWidth: 1, borderBottomColor: Pastel.border },
+  clubCoverPlaceholderText: { color: Pastel.textMuted, fontSize: 12, fontFamily: Font.semiBold, includeFontPadding: false },
+  clubMeta: { flexDirection: "row", alignItems: "flex-start", gap: 14, padding: 16, paddingTop: 12 },
+  clubAvatar: { width: 52, height: 52, borderRadius: 16, borderWidth: 2, borderColor: Pastel.border },
+  clubAvatarPlaceholder: { width: 52, height: 52, borderRadius: 16, backgroundColor: Pastel.surfaceAlt, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: Pastel.border },
   clubMetaText: { flex: 1, gap: 4 },
   clubNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  clubName: { color: "#111827", fontSize: 18, fontWeight: "800" },
-  privatePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  privatePillText: { color: "#111827", fontSize: 11, fontWeight: "700" },
-  publicPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E9F8EE",
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  publicPillText: { color: "#1E7A36", fontSize: 11, fontWeight: "700" },
-  clubDescription: { color: "#9CA3AF", fontSize: 13, lineHeight: 19 },
+  clubName: { color: Pastel.text, fontSize: 18, fontFamily: Font.extraBold, includeFontPadding: false },
+  privatePill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Pastel.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: Pastel.primary },
+  privatePillText: { color: Pastel.primary, fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
+  publicPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Pastel.tealSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: Pastel.teal },
+  publicPillText: { color: Pastel.teal, fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
+  clubDescription: { color: Pastel.textMuted, fontSize: 13, lineHeight: 19, includeFontPadding: false },
 
-  // ── Stats ──
+  // Stats
   statsRow: { flexDirection: "row", gap: 12 },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 16,
-    alignItems: "center",
-    gap: 4,
-  },
-  statValue: { color: "#111827", fontSize: 26, fontWeight: "800" },
-  statLabel: { color: "#9CA3AF", fontSize: 12, fontWeight: "700" },
+  statCard: { flex: 1, backgroundColor: Pastel.surface, borderRadius: 18, borderWidth: 1, borderColor: Pastel.border, padding: 14, alignItems: "center", gap: 4 },
+  statValue: { color: Pastel.teal, fontSize: 26, fontFamily: Font.display, includeFontPadding: false },
+  statLabel: { color: Pastel.textMuted, fontSize: 11, fontFamily: Font.semiBold, textAlign: "center", includeFontPadding: false },
 
-  // ── Actions ──
+  // Actions
   actionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   actionBtn: { flex: 1, flexDirection: "row", gap: 8, minWidth: 180 },
 
-  // ── Section ──
+  // Section
   section: { gap: 10 },
-  sectionTitle: { color: "#111827", fontSize: 17, fontWeight: "800" },
-  emptyBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 28,
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyText: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: "center",
-    maxWidth: 400,
-  },
+  sectionTitle: { color: Pastel.text, fontSize: 17, fontFamily: Font.extraBold, includeFontPadding: false },
+  emptyBox: { backgroundColor: Pastel.surface, borderRadius: 20, borderWidth: 1, borderColor: Pastel.border, padding: 28, alignItems: "center", gap: 12 },
+  emptyText: { color: Pastel.textMuted, fontSize: 14, lineHeight: 21, textAlign: "center", maxWidth: 400, includeFontPadding: false },
 
-  // ── Boutons globaux ──
-  primaryBtn: {
-    backgroundColor: "#111827",
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryBtnText: { color: "#FFFFFF", fontWeight: "800", fontSize: 14 },
-  secondaryBtn: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  secondaryBtnText: { color: "#111827", fontWeight: "700", fontSize: 14 },
+  // Boutons
+  primaryBtn: { backgroundColor: Pastel.primary, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center", justifyContent: "center" },
+  primaryBtnText: { color: "#FFFFFF", fontFamily: Font.extraBold, fontSize: 14, includeFontPadding: false },
+  secondaryBtn: { backgroundColor: Pastel.surface, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Pastel.border },
+  secondaryBtnText: { color: Pastel.text, fontFamily: Font.bold, fontSize: 14, includeFontPadding: false },
   btnDisabled: { opacity: 0.5 },
+
+  // Badge officiel
+  officialBadge: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", backgroundColor: Pastel.tealSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: Pastel.teal },
+  officialBadgeText: { color: Pastel.teal, fontSize: 11, fontFamily: Font.extraBold, includeFontPadding: false },
 });
 
 const postStyles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 16,
-    gap: 10,
-  },
-  pinnedCard: {
-    borderColor: "#111827",
-    backgroundColor: "#F7F9FF",
-  },
-  pinnedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  pinnedBadgeText: { color: "#111827", fontSize: 11, fontWeight: "700" },
-  eventBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  eventBadgeText: { color: "#111827", fontSize: 12, fontWeight: "700", maxWidth: 200 },
-  content: { color: "#111827", fontSize: 14, lineHeight: 21 },
+  card: { backgroundColor: Pastel.surface, borderRadius: 18, borderWidth: 1, borderColor: Pastel.border, padding: 16, gap: 10 },
+  pinnedCard: { borderColor: "#F59E0B", borderWidth: 2, backgroundColor: "#FFFDF0" },
+  pinnedBadge: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", backgroundColor: "#FFFBEB", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "#F59E0B" },
+  pinnedBadgeText: { color: "#92400E", fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
+  eventBadge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: Pastel.primarySoft, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, alignSelf: "flex-start", borderWidth: 1, borderColor: Pastel.primary },
+  eventBadgeText: { color: Pastel.primary, fontSize: 12, fontFamily: Font.bold, maxWidth: 200, includeFontPadding: false },
+  content: { color: Pastel.text, fontSize: 14, lineHeight: 21, fontFamily: Font.regular, includeFontPadding: false },
   photosRow: { marginHorizontal: -4 },
-  photoThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginHorizontal: 4,
-    backgroundColor: "#F3F4F6",
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  date: { color: "#9CA3AF", fontSize: 12 },
+  photoThumb: { width: 80, height: 80, borderRadius: 10, marginHorizontal: 4, backgroundColor: Pastel.surfaceAlt },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  date: { color: Pastel.textMuted, fontSize: 12, fontFamily: Font.regular, includeFontPadding: false },
   footerStats: { flexDirection: "row", gap: 12 },
   stat: { flexDirection: "row", alignItems: "center", gap: 4 },
-  statText: { color: "#9CA3AF", fontSize: 12 },
+  statText: { color: Pastel.textMuted, fontSize: 12, fontFamily: Font.regular, includeFontPadding: false },
   actions: { flexDirection: "row", alignItems: "center", gap: 6 },
-  approveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E9F8EE",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  approveBtnText: { color: "#1E7A36", fontSize: 12, fontWeight: "700" },
-  iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
+  approveBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Pastel.tealSoft, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Pastel.teal },
+  approveBtnText: { color: Pastel.teal, fontSize: 12, fontFamily: Font.bold, includeFontPadding: false },
+  iconBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: Pastel.surfaceAlt, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Pastel.border },
 });

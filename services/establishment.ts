@@ -34,6 +34,8 @@ export type EstablishmentProfile = {
   venue_type: string | null;
   venue_ambiance: string[] | null;
   service_tags: string[] | null;
+  food_tags: string[] | null;
+  payment_tags: string[] | null;
   darts_targets_count: number | null;
   lat: number | null;
   lng: number | null;
@@ -111,7 +113,7 @@ let previewEstablishment: EstablishmentProfile | null = null;
 let previewEvents: EstablishmentEvent[] = [];
 let previewSubscription: EstablishmentSubscription | null = null;
 const ESTABLISHMENT_SELECT =
-  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, logo_url, pin_emoji, pro_notes, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, darts_targets_count, lat, lng";
+  "id, owner_user_id, name, city, address, postcode, description, contact, instagram_url, website_url, phone, social_platform, social_url, cover_url, logo_url, pin_emoji, pro_notes, photos, opening_hours, timezone, activities, tags, venue_type, venue_ambiance, service_tags, food_tags, payment_tags, darts_targets_count, lat, lng";
 const SUBSCRIPTION_SELECT =
   "id, venue_id, plan, status, current_period_end, events_quota_year, events_used_year, tournaments_used_year, boosts_used_year, local_spotlight_used_year, targeted_notifications_used_year, stripe_customer_id, stripe_subscription_id, stripe_price_id";
 
@@ -155,6 +157,8 @@ const ensurePreviewState = (userId: string) => {
       venue_type: "Bar à cocktails",
       venue_ambiance: ["Festif", "Animé"],
       service_tags: ["Wi-Fi", "Terrasse", "Happy Hour"],
+      food_tags: null,
+      payment_tags: null,
       darts_targets_count: 2,
       lat: 48.3904,
       lng: -4.4861,

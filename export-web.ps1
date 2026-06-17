@@ -4,7 +4,7 @@
 Set-Location $PSScriptRoot
 
 Write-Host "Export Expo..." -ForegroundColor Cyan
-npx expo export --platform web
+npx expo export --platform web --clear
 if (-not $?) { Write-Host "Erreur lors de l'export." -ForegroundColor Red; exit 1 }
 
 # Rename node_modules -> pkg (Vercel bloque /assets/node_modules/)
@@ -71,7 +71,7 @@ if (Test-Path $htmlPath) {
 }
 
 # vercel.json sans BOM
-$json = '{"rewrites":[{"source":"/((?!_expo|assets|favicon.png|metadata.json).*)","destination":"/index.html"}]}'
+$json = '{"rewrites":[{"source":"/((?!_expo|assets|favicon\\.ico|favicon\\.png|metadata\\.json|.*\\.png|.*\\.jpg|.*\\.svg).*)","destination":"/index.html"}]}'
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText("$PSScriptRoot\dist\vercel.json", $json, $utf8NoBom)
 Write-Host "vercel.json ecrit" -ForegroundColor Green

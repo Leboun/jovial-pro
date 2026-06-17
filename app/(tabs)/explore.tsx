@@ -3,6 +3,7 @@ import { useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   Linking,
   Platform,
@@ -14,7 +15,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -29,6 +30,7 @@ import ExploreBoostBanner from "@/components/ExploreBoostBanner";
 import { Pastel } from "@/constants/pastel";
 import { useIsPremium } from "@/hooks/useIsPremium";
 import { Font } from "@/constants/typography";
+import { getActivityEmoji } from "@/utils/activityEmoji";
 
 type VenueRow = {
   id: number;
@@ -122,7 +124,9 @@ const MOODS = [
 type IntentTab = {
   key: IntentKey;
   label: string;
-  iconSource: number;
+  icon: string;
+  iconActive: string;
+  lib?: "ion" | "mci";
 };
 
 type EventCategory = {
@@ -136,17 +140,21 @@ const intentTabs: IntentTab[] = [
   {
     key: "venues",
     label: "Lieux",
-    iconSource: require("../../assets/images/Lieux.png"),
+    icon: "location-outline",
+    iconActive: "location",
   },
   {
     key: "events",
     label: "Événements",
-    iconSource: require("../../assets/images/evenements.png"),
+    icon: "calendar-outline",
+    iconActive: "calendar",
   },
   {
     key: "activities",
     label: "Activités",
-    iconSource: require("../../assets/images/activites.png"),
+    icon: "bullseye-arrow",
+    iconActive: "bullseye-arrow",
+    lib: "mci",
   },
 ];
 
@@ -516,46 +524,7 @@ const buildActivityOrder = (isBretagne: boolean) => {
   return base;
 };
 
-const getActivityEmoji = (activity: string) => {
-  const key = normalizeSearchValue(activity);
-  const map: Record<string, string> = {
-    flechettes: "🎯",
-    babyfoot: "⚽",
-    billard: "🎱",
-    jeuxdesociete: "🎲",
-    jeuxvideos: "🎮",
-    flipper: "🕹️",
-    paletbreton: "🥏",
-    bowling: "🎳",
-    beerpong: "🍺",
-    airhockey: "🏒",
-    arcade: "🕹️",
-    basket: "🏀",
-    consolesurecran: "🎮",
-    cornhole: "🪵",
-    escalade: "🧗",
-    experiencesimulationvr: "🕶️",
-    jeudelagrenouille: "🐸",
-    jeuxdadressededecomptoir: "🎯",
-    karting: "🏎️",
-    lancerdehaches: "🪓",
-    lasergame: "🔫",
-    minigolf: "⛳",
-    molkky: "🪵",
-    padel: "🎾",
-    paletvendeen: "🥏",
-    patinoire: "⛸️",
-    petanque: "⚫",
-    punchingball: "🥊",
-    quizzroom: "❓",
-    retrogaming: "🕹️",
-    shuffleboard: "🥌",
-    simulateurdeconduite: "🚗",
-    tennisdetable: "🏓",
-    trampoline: "🤸",
-  };
-  return map[key] ?? "✨";
-};
+// getActivityEmoji est centralise dans "@/utils/activityEmoji" (importe en haut).
 
 const getEventCategoryEmoji = (label: string) => {
   const key = normalizeSearchValue(label);
@@ -589,7 +558,7 @@ const getActivityHeroCopy = (activity: string | null) => {
   const map: Record<string, { title: string; text: string; nearbyTitle: string; resultsTitle: string }> = {
     flechettes: {
       title: "Les meilleurs spots pour lancer quelques fléchettes",
-      text: "Retrouve les bars où l'on joue vraiment, avec une ambiance propice à la partie comme à l'afterwork.",
+      text: "Retrouve les établissements où l'on joue vraiment, avec une ambiance propice à la partie comme à l'afterwork.",
       nearbyTitle: "Autour de toi pour les fléchettes",
       resultsTitle: "Où jouer aux fléchettes",
     },
@@ -607,7 +576,7 @@ const getActivityHeroCopy = (activity: string | null) => {
     },
     babyfoot: {
       title: "Les lieux où le baby foot se joue pour de vrai",
-      text: "Trouve les bars et spots où l'on vient autant pour l'ambiance que pour la revanche.",
+      text: "Trouve les établissements et spots où l'on vient autant pour l'ambiance que pour la revanche.",
       nearbyTitle: "Autour de toi pour le baby foot",
       resultsTitle: "Où jouer au baby foot",
     },
@@ -931,6 +900,25 @@ export default function ExploreScreen() {
   const activityCardWidth = Math.min(180, Math.round(Dimensions.get("window").width * 0.46));
 
   const headerTopPadding = insets.top + 6;
+
+  // En-tete compact au scroll (facon Airbnb) : les icones d'intention se reduisent
+  // et disparaissent en scrollant, mais les 3 noms restent visibles.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const intentIconHeight = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [54, 0],
+    extrapolate: "clamp",
+  });
+  const intentIconOpacity = scrollY.interpolate({
+    inputRange: [0, 110],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+  const intentIconMargin = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [4, 0],
+    extrapolate: "clamp",
+  });
 
   const calendarMonthLabel = useMemo(
     () => eventCalendarMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
@@ -1972,7 +1960,9 @@ export default function ExploreScreen() {
   const showEvents = activeIntent === "events";
   const showActivities = activeIntent === "activities";
   const quickResults =
-    (trimmedQuery.length >= 2 || (showEvents && !!selectedDate)) && !showActivities;
+    (trimmedQuery.length >= 2 ||
+      (showEvents && (!!selectedDate || selectedEventCategoryId != null))) &&
+    !showActivities;
   const hasActivitySearchCriteria =
     showActivities &&
     (trimmedQuery.length > 0 ||
@@ -2674,6 +2664,11 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         stickyHeaderIndices={[0]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
       >
         {/* Sticky header: search bar + intent tabs */}
         <View style={[styles.headerZone, { paddingTop: headerTopPadding }]}>
@@ -2702,13 +2697,32 @@ export default function ExploreScreen() {
                   style={styles.intentTab}
                   onPress={() => setActiveIntent(tab.key)}
                 >
-                  <View style={[styles.intentIconWrap, active ? styles.intentIconWrapActive : null]}>
-                    <Image
-                      source={tab.iconSource}
-                      style={styles.intentIconImage}
-                      contentFit="contain"
-                    />
-                  </View>
+                  <Animated.View
+                    style={[
+                      styles.intentIconWrap,
+                      active ? styles.intentIconWrapActive : null,
+                      {
+                        height: intentIconHeight,
+                        opacity: intentIconOpacity,
+                        marginBottom: intentIconMargin,
+                        overflow: "hidden",
+                      },
+                    ]}
+                  >
+                    {tab.lib === "mci" ? (
+                      <MaterialCommunityIcons
+                        name={(active ? tab.iconActive : tab.icon) as any}
+                        size={28}
+                        color={active ? Pastel.primary : Pastel.textMuted}
+                      />
+                    ) : (
+                      <Ionicons
+                        name={(active ? tab.iconActive : tab.icon) as any}
+                        size={28}
+                        color={active ? Pastel.primary : Pastel.textMuted}
+                      />
+                    )}
+                  </Animated.View>
                   <Text style={[styles.intentTabText, active ? styles.intentTabTextActive : null]}>
                     {tab.label}
                   </Text>
@@ -2731,33 +2745,6 @@ export default function ExploreScreen() {
           )}
 
           {/* === VENUES === */}
-          {showVenues ? (
-            <View style={styles.quickFilterRow}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickFilterScroll}
-              >
-                {featuredVenueTypes.map((type) => {
-                  const active = selectedVenueTypes.includes(type);
-                  return (
-                    <Pressable
-                      key={`venue-type-quick-${type}`}
-                      style={[styles.quickFilterChip, active ? styles.quickFilterChipActive : null]}
-                      onPress={() => toggleSelection(type, setSelectedVenueTypes)}
-                    >
-                      <Text style={[styles.quickFilterChipText, active ? styles.quickFilterChipTextActive : null]}>
-                        {type}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-              <Pressable style={styles.quickFilterIconBtn} onPress={() => { setActiveVenuePanel("type"); setVenueSearchOpen(true); }}>
-                <Ionicons name="options-outline" size={18} color={Pastel.text} />
-              </Pressable>
-            </View>
-          ) : null}
 
           {showVenues && quickResults ? (
             <View style={styles.sectionCard}>
@@ -2871,7 +2858,7 @@ export default function ExploreScreen() {
                                   key={`nearby-venue-${venue.id}-photo-${index}`}
                                   style={[
                                     styles.activityCarouselSlide,
-                                    { width: 260, height: 180 },
+                                    { width: 260, height: 160 },
                                   ]}
                                 >
                                   <Image
@@ -2899,9 +2886,13 @@ export default function ExploreScreen() {
                               <View style={styles.venueTypeBadgeOnPhoto}>
                                 <Text style={styles.venueTypeBadgeOnPhotoText}>{typeLabel}</Text>
                               </View>
-                            ) : venue.distance != null ? (
+                            ) : null}
+                            {coords && venue.lat != null && venue.lng != null ? (
                               <View style={styles.distancePill}>
-                                <Text style={styles.distanceText}>{formatDistance(venue.distance)}</Text>
+                                <Ionicons name="location" size={11} color="#FFFFFF" />
+                                <Text style={styles.distanceText}>
+                                  {formatDistance(distanceKm(coords.lat, coords.lng, venue.lat, venue.lng))}
+                                </Text>
                               </View>
                             ) : null}
                           </View>
@@ -2940,33 +2931,6 @@ export default function ExploreScreen() {
 
 
           {/* === EVENTS === */}
-          {showEvents ? (
-            <View style={styles.quickFilterRow}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickFilterScroll}
-              >
-                {featuredEventCategories.map((category) => {
-                  const active = selectedEventCategoryId === category.id;
-                  return (
-                    <Pressable
-                      key={`event-category-quick-${category.id}`}
-                      style={[styles.quickFilterChip, active ? styles.quickFilterChipActive : null]}
-                      onPress={() => applyEventCategorySelection(category.id)}
-                    >
-                      <Text style={[styles.quickFilterChipText, active ? styles.quickFilterChipTextActive : null]}>
-                        {`${getEventCategoryEmoji(category.title)} ${category.title}`}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-              <Pressable style={styles.quickFilterIconBtn} onPress={openEventSearch}>
-                <Ionicons name="options-outline" size={18} color={Pastel.text} />
-              </Pressable>
-            </View>
-          ) : null}
 
           {showEvents && spotlightEvents.length > 0 && !quickResults ? (
             <View style={styles.sectionCard}>
@@ -3008,29 +2972,30 @@ export default function ExploreScreen() {
               {noQuickResults ? (
                 <Text style={styles.muted}>Aucun résultat pour le moment.</Text>
               ) : (
-                filteredEvents.slice(0, 6).map((event) => (
-                  <Pressable
-                    key={"result-" + event.id}
-                    style={styles.resultRow}
-                    onPress={() => openEvent(event.id)}
-                  >
-                    <View style={styles.resultIconAlt}>
-                      <Ionicons name="calendar-outline" size={16} color="#0B0B12" />
-                    </View>
-                    <View style={styles.resultInfo}>
-                      <Text style={styles.resultName}>{event.title}</Text>
-                      <Text style={styles.resultMeta}>
-                        {event.venueName || "Lieu"} - {event.venueCity || "Ville"}
-                      </Text>
-                    </View>
-                    <View style={styles.eventTime}>
-                      <Text style={styles.eventTimeText}>
-                        {formatEventDate(event.startsAt)}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                  </Pressable>
-                ))
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 10 }}>
+                  {filteredEvents.slice(0, 12).map((event) => (
+                    <Pressable
+                      key={"result-" + event.id}
+                      style={styles.airbnbEventCard}
+                      onPress={() => openEvent(event.id)}
+                    >
+                      <Image
+                        source={event.coverUrl || FALLBACK_COVER}
+                        style={styles.airbnbEventImage}
+                        contentFit="cover"
+                        cachePolicy="disk"
+                        transition={120}
+                      />
+                      <View style={styles.airbnbCardInfo}>
+                        <Text style={styles.airbnbCardTitle}>{event.title}</Text>
+                        <Text style={styles.airbnbCardMeta}>
+                          {formatEventDate(event.startsAt)} · {event.venueName || "Lieu"}
+                        </Text>
+                        <Text style={styles.airbnbCardMeta}>{event.venueCity || "Ville"}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
               )}
             </View>
           ) : null}
@@ -3075,31 +3040,6 @@ export default function ExploreScreen() {
           {/* === ACTIVITIES === */}
           {showActivities ? (
             <>
-              <View style={styles.quickFilterRow}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.quickFilterScroll}
-                >
-                  {orderedActivityOptions.slice(0, 8).map((activity) => {
-                    const active = selectedActivity === activity;
-                    return (
-                      <Pressable
-                        key={`activity-quick-${activity}`}
-                        style={[styles.quickFilterChip, active ? styles.quickFilterChipActive : null]}
-                        onPress={() => setSelectedActivity(active ? null : activity)}
-                      >
-                        <Text style={[styles.quickFilterChipText, active ? styles.quickFilterChipTextActive : null]}>
-                          {`${getActivityEmoji(activity)} ${activity}`}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-                <Pressable style={styles.quickFilterIconBtn} onPress={() => { setActiveActivityPanel("activities"); setActivitySearchOpen(true); }}>
-                  <Ionicons name="options-outline" size={18} color={Pastel.text} />
-                </Pressable>
-              </View>
               {activitySections.map((section) => (
                 <View key={`activity-section-${section.activity}`} style={styles.sectionCard}>
                   <View style={styles.airbnbSectionHeader}>
@@ -3152,7 +3092,7 @@ export default function ExploreScreen() {
                                     key={`activity-venue-${venue.id}-photo-${index}`}
                                     style={[
                                       styles.activityCarouselSlide,
-                                      { width: 260, height: 180 },
+                                      { width: 260, height: 160 },
                                     ]}
                                   >
                                     <Image
@@ -3181,6 +3121,14 @@ export default function ExploreScreen() {
                                   {`${getActivityEmoji(section.activity)} ${section.activity}`}
                                 </Text>
                               </View>
+                              {coords && venue.lat != null && venue.lng != null ? (
+                                <View style={styles.distancePill}>
+                                  <Ionicons name="location" size={11} color="#FFFFFF" />
+                                  <Text style={styles.distanceText}>
+                                    {formatDistance(distanceKm(coords.lat, coords.lng, venue.lat, venue.lng))}
+                                  </Text>
+                                </View>
+                              ) : null}
                             </View>
                             <View style={styles.airbnbCardInfo}>
                               <View style={styles.airbnbCardInfoRow}>
@@ -3284,9 +3232,9 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 28,
     fontFamily: Font.display,
-    color: Pastel.text,
+    color: Pastel.primary,
     letterSpacing: 0.5,
-    paddingBottom: 10,
+    paddingBottom: 4,
     includeFontPadding: false,
   },
   headerZone: {
@@ -3338,13 +3286,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 40,
     backgroundColor: Pastel.surface,
-    marginTop: 10,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
+    borderWidth: 1.5,
+    borderColor: Pastel.primarySoft,
+    marginTop: 8,
+    marginBottom: 10,
+    shadowColor: Pastel.primary,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   searchPill: {
     flexDirection: "row",
@@ -3555,9 +3505,9 @@ const styles = StyleSheet.create({
   intentTab: {
     flex: 1,
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 8,
-    paddingTop: 10,
+    gap: 2,
+    paddingVertical: 6,
+    paddingTop: 8,
   },
   intentTabActive: {},
   intentIconWrap: {
@@ -3582,7 +3532,7 @@ const styles = StyleSheet.create({
     width: "60%",
     borderRadius: 999,
     backgroundColor: "transparent",
-    marginTop: 6,
+    marginTop: 2,
     alignSelf: "center",
   },
   intentTabUnderlineActive: {
@@ -3692,8 +3642,6 @@ const styles = StyleSheet.create({
   chipTextActive: { color: "#2B4E93" },
   loadingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   sectionCard: {
-    padding: 0,
-    borderRadius: 0,
     backgroundColor: "transparent",
     gap: 14,
   },
@@ -3950,14 +3898,14 @@ const styles = StyleSheet.create({
   statusMeta: { fontSize: 11, color: Pastel.textMuted, fontFamily: Font.semiBold, includeFontPadding: false },
   venueTypeBadgeOnPhoto: {
     position: "absolute",
-    right: 10,
-    bottom: 10,
-    paddingHorizontal: 8,
+    left: 10,
+    top: 10,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: "rgba(17, 24, 39, 0.72)",
   },
-  venueTypeBadgeOnPhotoText: { fontSize: 11, fontFamily: Font.bold, color: "#4C1D95", includeFontPadding: false },
+  venueTypeBadgeOnPhotoText: { fontSize: 11, fontFamily: Font.bold, color: "#FFFFFF", includeFontPadding: false },
   venueActivityTagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 3 },
   venueActivityTag: {
     paddingHorizontal: 7,
@@ -3971,12 +3919,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 10,
     bottom: 10,
-    paddingHorizontal: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#0EA5E9",
+    backgroundColor: "rgba(17, 24, 39, 0.72)",
   },
-  distanceText: { color: "#0B3B4A", fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
+  distanceText: { color: "#FFFFFF", fontSize: 11, fontFamily: Font.bold, includeFontPadding: false },
   tagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   tag: {
     paddingHorizontal: 8,
@@ -4296,13 +4247,13 @@ const styles = StyleSheet.create({
   airbnbSectionTitle: {
     fontSize: 20,
     fontFamily: Font.extraBold,
-    color: Pastel.text,
+    color: Pastel.primary,
     includeFontPadding: false,
   },
   airbnbSeeAll: {
     fontSize: 14,
     fontFamily: Font.semiBold,
-    color: Pastel.text,
+    color: Pastel.primary,
     includeFontPadding: false,
   },
   airbnbVenueCard: {
@@ -4319,7 +4270,7 @@ const styles = StyleSheet.create({
   },
   airbnbCarouselWrap: {
     width: 260,
-    height: 180,
+    height: 160,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     overflow: "hidden",

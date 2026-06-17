@@ -716,10 +716,14 @@ export default function ProfileScreen() {
               style={styles.avatarImg}
               onError={() => setAvatarLoadFailed(true)}
             />
-          ) : (
+          ) : profile ? (
+            // Profil charge, sans photo -> initiales
             <View style={styles.avatarFallback}>
               <Text style={styles.avatarInitials}>{initialsFrom(profile, email)}</Text>
             </View>
+          ) : (
+            // Pendant le chargement -> rond neutre, PAS d'initiales (evite le flash)
+            <View style={styles.avatarFallback} />
           )}
           <View style={styles.avatarCameraBtn}>
             <Ionicons name="camera" size={13} color="#FFFFFF" />

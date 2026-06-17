@@ -164,6 +164,8 @@ export async function upsertVenueBookingActivity(params: {
   quantity: number;
   reservableQuantity: number;
   bookingEnabled: boolean;
+  bookingMode: BookingMode;
+  bookingUrl: string | null;
   paymentRequired: boolean;
   priceCents: number;
 }) {
@@ -176,7 +178,8 @@ export async function upsertVenueBookingActivity(params: {
     game_id: params.gameId,
     quantity: normalizedQuantity,
     booking_enabled: params.bookingEnabled,
-    booking_mode: params.bookingEnabled ? "jovial" : "none",
+    booking_mode: params.bookingMode,
+    booking_url: params.bookingMode === "external" ? (params.bookingUrl?.trim() || null) : null,
     booking_capacity: normalizedReservableQuantity,
     payment_required: params.paymentRequired,
     price_cents: params.paymentRequired ? Math.max(0, Math.trunc(params.priceCents || 0)) : 0,

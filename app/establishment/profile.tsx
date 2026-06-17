@@ -139,44 +139,27 @@ const VENUE_TYPE_GROUPS = [
 
 const VENUE_AMBIANCE_OPTIONS = [
   "Calme",
-  "Convivial",
-  "Festif",
-  "Familial",
-  "Animé",
-  "Compétitif",
-  "Ludique",
-  "Nocturne",
-  "Studieux",
   "Cosy",
+  "Intimiste",
   "Romantique",
-  "Branché",
+  "Convivial",
   "Décontracté",
-  "Afterwork",
-  "Soirée entre amis",
-  "Musique live",
-  "DJ set",
-  "Karaoké",
-  "Quiz / Blind test",
-  "Tournoi",
-  "Soirée à thème",
+  "Familial",
   "Chic",
+  "Branché",
   "Rétro / Vintage",
   "Bohème",
-  "Multiculturel",
-  "LGBTQIA+ friendly",
-  "Éco-responsable",
-  "Pet-friendly",
-  "Startup / Créatif",
-  "Open mic",
-  "Vue panoramique",
-  "Intimiste",
-  "Grosse ambiance",
+  "Festif",
+  "Animé",
   "Dansant",
-  "Mixte / Tout public",
-  "Jeunes / Étudiants",
-  "Bière artisanale",
-  "Célébration / Anniversaire",
-  "Terrasse",
+  "Grosse ambiance",
+  "Nocturne",
+  "Afterwork",
+  "Studieux",
+  "Ludique",
+  "Compétitif",
+  "Soirée entre amis",
+  "Éco-responsable",
 ];
 
 const AMBIANCE_MAX = 2;
@@ -194,7 +177,10 @@ const SERVICE_TAGS_OPTIONS = [
   "Vue",
   "Pet-friendly",
   "LGBTQIA+ friendly",
-  "Restauration",
+  "Climatisation",
+  "Toilettes",
+  "Espace fumeur",
+  "Adapté grands groupes",
   "Retransmission sportive",
   "Jeux à disposition",
   "Ludothèque",
@@ -202,14 +188,43 @@ const SERVICE_TAGS_OPTIONS = [
   "Scène",
   "Projection / Cinéma",
   "Streaming / Esports",
-  "Options végétariennes",
   "Espace lounge",
   "Douches",
   "Hébergement",
   "Borne de recharge électrique",
   "Ateliers & workshops",
 ];
-const SERVICE_TAGS_MAX = 4;
+const SERVICE_TAGS_MAX = 8;
+
+const FOOD_TAGS_OPTIONS = [
+  "Planche apéro / mixte",
+  "Planche charcuterie",
+  "Planche fromage",
+  "Planche végé",
+  "Saucisson",
+  "Huîtres / fruits de mer",
+  "Tapas",
+  "Restauration (plats)",
+  "Snacking",
+  "Brunch",
+  "Crêpes / galettes",
+  "Bières locales / artisanales",
+  "Cocktails maison",
+  "Options végé / vegan",
+  "Sans gluten",
+];
+const FOOD_TAGS_MAX = 5;
+
+const PAYMENT_TAGS_OPTIONS = [
+  "Carte bancaire",
+  "Espèces",
+  "Tickets restaurant",
+  "Chèques cadeaux",
+  "Chèques vacances (ANCV)",
+  "Apple / Google Pay",
+  "Sans contact",
+];
+const PAYMENT_TAGS_MAX = PAYMENT_TAGS_OPTIONS.length;
 
 // Options pour les menus déroulants de "Ma fiche"
 const VENUE_TYPE_PICKER_GROUPS: PickerGroup[] = VENUE_TYPE_GROUPS.map((g) => ({
@@ -218,6 +233,8 @@ const VENUE_TYPE_PICKER_GROUPS: PickerGroup[] = VENUE_TYPE_GROUPS.map((g) => ({
 }));
 const VENUE_AMBIANCE_PICKER: PickerOption[] = VENUE_AMBIANCE_OPTIONS.map((a) => ({ value: a, label: a }));
 const SERVICE_TAGS_PICKER: PickerOption[] = SERVICE_TAGS_OPTIONS.map((s) => ({ value: s, label: s }));
+const FOOD_TAGS_PICKER: PickerOption[] = FOOD_TAGS_OPTIONS.map((s) => ({ value: s, label: s }));
+const PAYMENT_TAGS_PICKER: PickerOption[] = PAYMENT_TAGS_OPTIONS.map((s) => ({ value: s, label: s }));
 const PIN_EMOJI_OPTIONS: PickerOption[] = [
   { value: "", label: "Auto (selon l'activité principale)" },
   { value: "🎯", label: "Fléchettes", emoji: "🎯" },
@@ -381,6 +398,8 @@ export default function EstablishmentProfileScreen() {
     venue_type: "" as string,
     venue_ambiance: [] as string[],
     service_tags: [] as string[],
+    food_tags: [] as string[],
+    payment_tags: [] as string[],
     pin_emoji: "" as string,
     opening_hours: buildEmptySlots(),
   });
@@ -564,6 +583,8 @@ export default function EstablishmentProfileScreen() {
       venue_type: establishment?.venue_type ?? "",
       venue_ambiance: Array.isArray(establishment?.venue_ambiance) ? establishment.venue_ambiance.filter(Boolean) : [],
       service_tags: Array.isArray(establishment?.service_tags) ? establishment.service_tags.filter(Boolean) : [],
+      food_tags: Array.isArray(establishment?.food_tags) ? establishment.food_tags.filter(Boolean) : [],
+      payment_tags: Array.isArray(establishment?.payment_tags) ? establishment.payment_tags.filter(Boolean) : [],
       pin_emoji: establishment?.pin_emoji ?? "",
       opening_hours: slotsFromOpeningHours(establishment?.opening_hours ?? null),
     });
@@ -856,6 +877,8 @@ export default function EstablishmentProfileScreen() {
         venue_type: form.venue_type || null,
         venue_ambiance: form.venue_ambiance.length > 0 ? form.venue_ambiance : null,
         service_tags: form.service_tags.length > 0 ? form.service_tags : null,
+        food_tags: form.food_tags.length > 0 ? form.food_tags : null,
+        payment_tags: form.payment_tags.length > 0 ? form.payment_tags : null,
         pin_emoji: form.pin_emoji || null,
         lat,
         lng,
@@ -1219,8 +1242,62 @@ export default function EstablishmentProfileScreen() {
       </View>
 
       <View style={styles.card}>
+        <View style={styles.tagHeader}>
+          <View style={styles.tagHeaderText}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>6</Text></View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.cardTitle}>Restauration & boissons</Text>
+                <Text style={styles.cardHint}>Choisis jusqu'à {FOOD_TAGS_MAX} spécialités — planches, tapas, bières locales… Pas besoin de détailler tout le menu, juste de donner envie.</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.tagLimitCard}>
+            <Text style={styles.tagLimitValue}>{form.food_tags.length}/{FOOD_TAGS_MAX}</Text>
+            <Text style={styles.tagLimitLabel}>spécialités</Text>
+          </View>
+        </View>
+        <PickerField
+          value={form.food_tags}
+          onChange={(v) => setForm((prev) => ({ ...prev, food_tags: v }))}
+          multi
+          max={FOOD_TAGS_MAX}
+          options={FOOD_TAGS_PICKER}
+          placeholder="Choisir des spécialités…"
+          modalTitle="Restauration & boissons"
+        />
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.tagHeader}>
+          <View style={styles.tagHeaderText}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>7</Text></View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.cardTitle}>Paiements & avantages</Text>
+                <Text style={styles.cardHint}>Indique les moyens de paiement acceptés — tickets resto, chèques cadeaux, CB… Aucune limite, coche tout ce qui s'applique.</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.tagLimitCard}>
+            <Text style={styles.tagLimitValue}>{form.payment_tags.length}</Text>
+            <Text style={styles.tagLimitLabel}>moyens</Text>
+          </View>
+        </View>
+        <PickerField
+          value={form.payment_tags}
+          onChange={(v) => setForm((prev) => ({ ...prev, payment_tags: v }))}
+          multi
+          max={PAYMENT_TAGS_MAX}
+          options={PAYMENT_TAGS_PICKER}
+          placeholder="Choisir les moyens de paiement…"
+          modalTitle="Paiements & avantages"
+        />
+      </View>
+
+      <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>6</Text></View>
+          <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>8</Text></View>
           <View style={styles.sectionHeaderText}>
             <Text style={styles.cardTitle}>Horaires d'ouverture <Text style={styles.required}>*</Text></Text>
             <Text style={styles.cardHint}>Définis jusqu'à 3 créneaux par jour. Laisse vide si l'établissement est fermé ce jour-là. Pour une fermeture après minuit, choisis simplement une heure de fermeture inférieure à l'heure d'ouverture (ex: 18:00 → 03:00).</Text>

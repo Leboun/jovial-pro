@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 
 import JovialProShell from "@/components/ui/JovialProShell";
 import JovialProStepBar from "@/components/ui/JovialProStepBar";
 import { ESTABLISHMENT_PREVIEW_ENABLED } from "@/constants/establishmentPreview";
 import { formatOfferPrice, getOfferByKey, type JovialProOfferKey } from "@/constants/jovialPro";
 import { useAuth } from "@/providers/AuthProvider";
-import { createCheckoutSession } from "@/services/billing";
+import { createCheckoutSession, createCustomerPortalSession } from "@/services/billing";
+import { Pastel } from "@/constants/pastel";
+import { Font } from "@/constants/typography";
 import {
   ensureStubEstablishmentForPro,
   fetchRealVenueByOwner,
@@ -21,6 +23,7 @@ type BillingInterval = "month" | "year";
 
 export default function EstablishmentSubscriptionCheckoutScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { offer, interval } = useLocalSearchParams<{ offer?: string; interval?: string }>();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
@@ -110,8 +113,34 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
     return `${selectedOffer.monthlyPrice.toFixed(2).replace(".", ",")} EUR/mois`;
   }, [intervalPrice, selectedInterval, selectedOffer]);
 
+  const [openingPortal, setOpeningPortal] = useState(false);
   const isCurrent = currentOfferKey === offerKey;
   const canCheckout = !!userId && !isCurrent;
+
+  const handleOpenPortal = async () => {
+    if (!establishment?.id) {
+      if (typeof window !== "undefined") window.location.href = "mailto:hello@getjovial.fr";
+      return;
+    }
+    try {
+      setOpeningPortal(true);
+      const returnUrl = typeof window !== "undefined" ? window.location.href : "https://pro.getjovial.fr/establishment/subscription";
+      const result = await createCustomerPortalSession({ venueId: establishment.id, returnUrl });
+      if (result?.url) {
+        if (typeof window !== "undefined") {
+          window.location.href = result.url;
+        } else {
+          await Linking.openURL(result.url);
+        }
+      } else {
+        if (typeof window !== "undefined") window.location.href = "mailto:hello@getjovial.fr?subject=Gestion abonnement Jovial Pro";
+      }
+    } catch {
+      if (typeof window !== "undefined") window.location.href = "mailto:hello@getjovial.fr?subject=Gestion abonnement Jovial Pro";
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
   const checkoutPath = offerKey ? `/establishment/subscription/${offerKey}?interval=${selectedInterval}` : "/establishment/offers";
   const nextBackOfficePath = "/establishment/dashboard";
 
@@ -168,10 +197,11 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
   };
 
   if (loading) {
+    // On garde la sidebar (shell) pendant le chargement pour eviter le "saut" visuel.
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={"#111827"} />
-      </View>
+      <JovialProShell currentPath={pathname} title="Mon offre" loading>
+        <View />
+      </JovialProShell>
     );
   }
 
@@ -187,6 +217,71 @@ export default function EstablishmentSubscriptionCheckoutScreen() {
           <Text style={styles.noticeText}>Choisis une offre depuis la page précédente.</Text>
           <Pressable style={styles.primaryButton} onPress={() => router.replace("/establishment/offers")}>
             <Text style={styles.primaryButtonText}>Retour aux offres</Text>
+          </Pressable>
+        </View>
+      </JovialProShell>
+    );
+  }
+
+  // Vue gestion abonnement actif
+  if (isCurrent && selectedOffer) {
+    return (
+      <JovialProShell
+        currentPath={pathname}
+        title="Mon abonnement"
+        subtitle={`Tu es abonné à l'${selectedOffer.name}.`}
+      >
+        <View style={styles.manageHero}>
+          <View style={styles.manageHeroTop}>
+            <View style={styles.managePill}>
+              <Text style={styles.managePillText}>✓ Abonnement actif</Text>
+            </View>
+            {selectedOffer.key === "pro" && (
+              <View style={styles.topPill}>
+                <Text style={styles.topPillText}>✦ Le plus complet</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.manageTitle}>{selectedOffer.name}</Text>
+          <Text style={styles.managePrice}>{formatOfferPrice(selectedOffer.annualPrice)}</Text>
+          <Text style={styles.manageSummary}>{selectedOffer.summary}</Text>
+
+          <View style={styles.manageDivider} />
+
+          <View style={styles.manageFeatures}>
+            {selectedOffer.features.map((f) => (
+              <View key={f} style={styles.manageFeatureRow}>
+                <Text style={styles.manageFeatureCheck}>✓</Text>
+                <Text style={styles.manageFeatureText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.manageActions}>
+          <Pressable
+            style={[styles.manageBtn, openingPortal && styles.manageBtnDisabled]}
+            onPress={handleOpenPortal}
+            disabled={openingPortal}
+          >
+            <Text style={styles.manageBtnText}>
+              {openingPortal ? "Ouverture..." : "Gérer la facturation →"}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.manageSecondary}
+            onPress={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = "mailto:hello@getjovial.fr";
+              } else {
+                Linking.openURL("mailto:hello@getjovial.fr");
+              }
+            }}
+          >
+            <Text style={styles.manageSecondaryText}>Contacter Jovial — hello@getjovial.fr</Text>
+          </Pressable>
+          <Pressable style={styles.manageBack} onPress={() => router.replace("/establishment/subscription")}>
+            <Text style={styles.manageBackText}>← Retour à Mon offre</Text>
           </Pressable>
         </View>
       </JovialProShell>
@@ -549,4 +644,60 @@ const styles = StyleSheet.create({
   },
   secondaryActionText: { color: "#111827", fontSize: 14, fontWeight: "700" },
   summaryHint: { color: "#9CA3AF", fontSize: 12, lineHeight: 18 },
+
+  // Vue gestion abonnement actif
+  manageHero: {
+    backgroundColor: Pastel.surface,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: "#10B981",
+    padding: 24,
+    gap: 14,
+  },
+  manageHeroTop: { flexDirection: "row", gap: 10, alignItems: "center" },
+  managePill: {
+    alignSelf: "flex-start",
+    backgroundColor: Pastel.teal,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  managePillText: { color: "#FFFFFF", fontSize: 12, fontFamily: Font.extraBold, includeFontPadding: false },
+  topPill: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Pastel.teal,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  topPillText: { color: Pastel.teal, fontSize: 11, fontFamily: Font.extraBold, includeFontPadding: false },
+  manageTitle: { color: Pastel.text, fontSize: 28, fontFamily: Font.extraBold, includeFontPadding: false },
+  managePrice: { color: Pastel.teal, fontSize: 18, fontFamily: Font.extraBold, includeFontPadding: false },
+  manageSummary: { color: Pastel.textMuted, fontSize: 14, lineHeight: 20, includeFontPadding: false },
+  manageDivider: { height: 1, backgroundColor: Pastel.teal, opacity: 0.2 },
+  manageFeatures: { gap: 10 },
+  manageFeatureRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  manageFeatureCheck: { color: Pastel.teal, fontSize: 13, fontFamily: Font.extraBold, lineHeight: 20, includeFontPadding: false },
+  manageFeatureText: { color: Pastel.text, fontSize: 14, lineHeight: 20, flex: 1, includeFontPadding: false },
+  manageActions: { gap: 12 },
+  manageBtn: {
+    backgroundColor: Pastel.teal,
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  manageBtnDisabled: { opacity: 0.6 },
+  manageBtnText: { color: "#FFFFFF", fontSize: 15, fontFamily: Font.extraBold, includeFontPadding: false },
+  manageSecondary: {
+    backgroundColor: Pastel.surface,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Pastel.border,
+  },
+  manageSecondaryText: { color: Pastel.text, fontSize: 14, fontFamily: Font.bold, includeFontPadding: false },
+  manageBack: { alignSelf: "center", paddingVertical: 8 },
+  manageBackText: { color: Pastel.textMuted, fontSize: 13, fontFamily: Font.semiBold, includeFontPadding: false },
 });

@@ -36,4 +36,13 @@ export async function registerPushToken(userId: string) {
     },
     { onConflict: "token" }
   );
+
+  // IMPORTANT : les edge functions (notify-message, etc.) lisent le token dans
+  // profiles.expo_push_token. On le synchronise ici, des le lancement, pour que
+  // les notifications push partent meme si l'utilisateur n'ouvre jamais l'onglet
+  // Notifications.
+  await supabase
+    .from("profiles")
+    .update({ expo_push_token: token })
+    .eq("user_id", userId);
 }

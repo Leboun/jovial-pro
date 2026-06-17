@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Pressable,
   RefreshControl,
@@ -40,9 +41,9 @@ type GroupCard = {
 };
 
 const TABS = [
-  { key: "discover", label: "À découvrir", icon: require("../../../assets/images/club-discover.png") },
-  { key: "mine", label: "Mes clubs", icon: require("../../../assets/images/club-my.png") },
-  { key: "actions", label: "Créer/Rejoindre", icon: require("../../../assets/images/club-join.png") },
+  { key: "discover", label: "À découvrir", icon: "compass-outline", iconActive: "compass" },
+  { key: "mine", label: "Mes clubs", icon: "people-outline", iconActive: "people" },
+  { key: "actions", label: "Créer/Rejoindre", icon: "add-circle-outline", iconActive: "add-circle" },
 ] as const;
 
 export default function GroupsScreen() {
@@ -195,6 +196,13 @@ export default function GroupsScreen() {
     return Object.entries(buckets).sort(([a], [b]) => a.localeCompare(b));
   }, [myGroups]);
 
+  // En-tete compact au scroll (comme Explore) : les icones se reduisent,
+  // les noms des onglets restent visibles.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const tabIconHeight = scrollY.interpolate({ inputRange: [0, 150], outputRange: [54, 0], extrapolate: "clamp" });
+  const tabIconOpacity = scrollY.interpolate({ inputRange: [0, 110], outputRange: [1, 0], extrapolate: "clamp" });
+  const tabIconMargin = scrollY.interpolate({ inputRange: [0, 150], outputRange: [4, 0], extrapolate: "clamp" });
+
   return (
     <View style={styles.screen}>
       {/* ── HEADER ── */}
@@ -212,9 +220,19 @@ export default function GroupsScreen() {
             const active = activeTab === tab.key;
             return (
               <Pressable key={tab.key} style={styles.tabBtn} onPress={() => switchTab(tab.key)}>
-                <View style={[styles.tabIconWrap, active ? styles.tabIconWrapActive : null]}>
-                  <RNImage source={tab.icon} style={styles.tabIcon} resizeMode="contain" />
-                </View>
+                <Animated.View
+                  style={[
+                    styles.tabIconWrap,
+                    active ? styles.tabIconWrapActive : null,
+                    { height: tabIconHeight, opacity: tabIconOpacity, marginBottom: tabIconMargin, overflow: "hidden" },
+                  ]}
+                >
+                  <Ionicons
+                    name={(active ? tab.iconActive : tab.icon) as any}
+                    size={26}
+                    color={active ? Pastel.primary : Pastel.textMuted}
+                  />
+                </Animated.View>
                 <Text style={[styles.tabBtnText, active ? styles.tabBtnTextActive : null]}>{tab.label}</Text>
                 <View style={[styles.tabUnderline, active ? styles.tabUnderlineActive : null]} />
               </Pressable>
@@ -232,6 +250,11 @@ export default function GroupsScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Pastel.primary} />}
         >
 
@@ -408,7 +431,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerTitle: { fontSize: 28, fontFamily: Font.display, color: Pastel.text, letterSpacing: 0.5, includeFontPadding: false },
+  headerTitle: { fontSize: 28, fontFamily: Font.display, color: Pastel.primary, letterSpacing: 0.5, includeFontPadding: false },
   headerSub: { fontSize: 12, color: Pastel.textMuted, marginTop: 1, fontFamily: Font.regular, includeFontPadding: false },
   headerAction: {
     width: 36,
@@ -423,9 +446,9 @@ const styles = StyleSheet.create({
   tabBtn: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
-    paddingTop: 10,
-    gap: 4,
+    paddingVertical: 6,
+    paddingTop: 8,
+    gap: 2,
   },
   tabIconWrap: {
     width: 54,
@@ -444,7 +467,7 @@ const styles = StyleSheet.create({
     width: "60%",
     borderRadius: 999,
     backgroundColor: "transparent",
-    marginTop: 6,
+    marginTop: 2,
   },
   tabUnderlineActive: { backgroundColor: Pastel.primary },
 

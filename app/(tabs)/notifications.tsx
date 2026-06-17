@@ -9,7 +9,9 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ExpoNotifications from "expo-notifications";
 
@@ -17,6 +19,9 @@ import { supabase } from "../../services/supabase";
 import { useAuth } from "../../providers/AuthProvider";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
+import { emitNotificationsChanged } from "@/utils/notifEvents";
+
+const JOVIAL_LOGO = require("../../assets/images/logo_jovial.png");
 
 type AppNotification = {
   id: number;
@@ -65,9 +70,12 @@ ExpoNotifications.setNotificationHandler({
 export default function NotificationsScreen() {
   const { session } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const userId = session?.user?.id ?? null;
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [senderMap, setSenderMap] = useState<Record<string, { firstname: string | null; avatar_url: string | null }>>({});
+  const [venueMap, setVenueMap] = useState<Record<string, { name: string | null; logo_url: string | null }>>({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const notifListener = useRef<any>(null);
@@ -99,8 +107,35 @@ export default function NotificationsScreen() {
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(50);
-    setNotifications((data as AppNotification[] | null) ?? []);
+    const list = (data as AppNotification[] | null) ?? [];
+    setNotifications(list);
     setLoading(false);
+
+    // Personnalisation des icones : avatars des expediteurs (message) + logos des etablissements (event)
+    const senderIds = Array.from(new Set(
+      list.filter((n) => n.type === "message").map((n) => n.data?.sender_id).filter(Boolean)
+    )) as string[];
+    const venueIds = Array.from(new Set(
+      list.filter((n) => n.type === "event").map((n) => n.data?.venue_id).filter((v) => v != null)
+    ));
+    if (senderIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, firstname, avatar_url")
+        .in("user_id", senderIds);
+      const m: Record<string, { firstname: string | null; avatar_url: string | null }> = {};
+      (profs ?? []).forEach((p: any) => { m[p.user_id] = { firstname: p.firstname, avatar_url: p.avatar_url }; });
+      setSenderMap(m);
+    }
+    if (venueIds.length) {
+      const { data: vs } = await supabase
+        .from("venues")
+        .select("id, name, logo_url")
+        .in("id", venueIds as any);
+      const m: Record<string, { name: string | null; logo_url: string | null }> = {};
+      (vs ?? []).forEach((v: any) => { m[String(v.id)] = { name: v.name, logo_url: v.logo_url }; });
+      setVenueMap(m);
+    }
   }, [userId]);
 
   const markAllRead = useCallback(async () => {
@@ -111,12 +146,25 @@ export default function NotificationsScreen() {
       .eq("user_id", userId)
       .eq("read", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    emitNotificationsChanged(); // -> rafraichit le badge de la cloche
   }, [userId]);
 
   const markOneRead = useCallback(async (id: number) => {
     await supabase.from("notifications").update({ read: true }).eq("id", id);
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    emitNotificationsChanged(); // -> rafraichit le badge de la cloche
   }, []);
+
+  const handleNotifPress = useCallback((notif: AppNotification) => {
+    markOneRead(notif.id);
+    // Redirection selon le type de notification
+    if (notif.type === "message") {
+      const senderId = notif.data?.sender_id;
+      if (senderId) {
+        router.push({ pathname: "/profile/chat", params: { friend: String(senderId) } } as any);
+      }
+    }
+  }, [markOneRead, router]);
 
   useEffect(() => { registerPushToken(); }, [registerPushToken]);
 
@@ -138,6 +186,47 @@ export default function NotificationsScreen() {
   }, [loadNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const renderNotifIcon = (notif: AppNotification) => {
+    // Message -> photo de profil de l'expediteur
+    if (notif.type === "message") {
+      const senderId = notif.data?.sender_id as string | undefined;
+      const prof = senderId ? senderMap[senderId] : undefined;
+      if (prof?.avatar_url) {
+        return <Image source={{ uri: prof.avatar_url }} style={styles.iconImg} contentFit="cover" transition={120} />;
+      }
+      if (prof?.firstname) {
+        return (
+          <View style={[styles.iconWrap, { backgroundColor: "#D6E0F5" }]}>
+            <Text style={styles.iconInitials}>{prof.firstname.slice(0, 2).toUpperCase()}</Text>
+          </View>
+        );
+      }
+    }
+    // Evenement -> logo de l'etablissement
+    if (notif.type === "event") {
+      const logo = (notif.data?.logo_url as string | undefined)
+        ?? (notif.data?.venue_id != null ? venueMap[String(notif.data.venue_id)]?.logo_url : undefined);
+      if (logo) {
+        return <Image source={{ uri: logo }} style={styles.iconImg} contentFit="cover" transition={120} />;
+      }
+    }
+    // Notification Jovial / systeme -> logo Jovial
+    if (!["message", "event", "group_post", "group_comment"].includes(notif.type)) {
+      return (
+        <View style={styles.iconJovial}>
+          <Image source={JOVIAL_LOGO} style={styles.iconJovialImg} contentFit="contain" />
+        </View>
+      );
+    }
+    // Repli : icone Ionicons selon le type
+    const icon = notifIcon(notif.type);
+    return (
+      <View style={[styles.iconWrap, { backgroundColor: icon.bg }]}>
+        <Ionicons name={icon.name as any} size={20} color={icon.color} />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.screen}>
@@ -176,17 +265,14 @@ export default function NotificationsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Pastel.primary} />}
         >
           {notifications.map((notif) => {
-            const icon = notifIcon(notif.type);
             return (
               <Pressable
                 key={notif.id}
                 style={[styles.card, !notif.read && styles.cardUnread]}
-                onPress={() => markOneRead(notif.id)}
+                onPress={() => handleNotifPress(notif)}
               >
                 {!notif.read && <View style={styles.unreadDot} />}
-                <View style={[styles.iconWrap, { backgroundColor: icon.bg }]}>
-                  <Ionicons name={icon.name as any} size={20} color={icon.color} />
-                </View>
+                {renderNotifIcon(notif)}
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{notif.title}</Text>
                   {notif.body ? (
@@ -217,7 +303,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Pastel.border,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 20, fontFamily: Font.display, color: Pastel.text, letterSpacing: 0.5, includeFontPadding: false },
+  title: { fontSize: 28, fontFamily: Font.display, color: Pastel.primary, letterSpacing: 0.5, includeFontPadding: false },
   badge: {
     backgroundColor: Pastel.primary,
     borderRadius: 999,
@@ -262,6 +348,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconImg: { width: 42, height: 42, borderRadius: 12, backgroundColor: Pastel.surfaceAlt },
+  iconInitials: { color: "#2B4E93", fontFamily: Font.extraBold, fontSize: 15, includeFontPadding: false },
+  iconJovial: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: Pastel.border,
+  },
+  iconJovialImg: { width: 30, height: 30 },
   cardBody: { flex: 1, gap: 2 },
   cardTitle: { fontSize: 14, fontFamily: Font.bold, color: Pastel.text, includeFontPadding: false },
   cardText: { fontSize: 13, color: Pastel.textMuted, lineHeight: 18, fontFamily: Font.regular, includeFontPadding: false },

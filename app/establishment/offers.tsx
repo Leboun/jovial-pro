@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +13,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { getOfferByKey, JOVIAL_PRO_OFFERS } from "@/constants/jovialPro";
-import { JOVIAL_PRO_FREE_TRIAL_MONTHS } from "@/constants/jovialProOnboarding";
+import { Pastel } from "@/constants/pastel";
 import { useAuth } from "@/providers/AuthProvider";
 import {
   fetchRealVenueByOwner,
@@ -119,11 +120,12 @@ export default function EstablishmentOffersScreen() {
     >
       {/* Top bar */}
       <View style={styles.topBar}>
-        <View style={styles.backBtn}>
-          <View style={styles.logoMini}>
-            <Text style={styles.logoMiniText}>J</Text>
-          </View>
-          <Text style={styles.brandLabel}>Jovial Pro</Text>
+        <View style={styles.brandLogoCenter} pointerEvents="none">
+          <Image
+            source={require("../../assets/images/logo_jovial.png")}
+            style={styles.brandLogoTop}
+            resizeMode="contain"
+          />
         </View>
         {session ? (
           <Pressable
@@ -152,7 +154,7 @@ export default function EstablishmentOffersScreen() {
         <Text style={styles.heroEyebrow}>Tarifs & Offres</Text>
         <Text style={styles.heroTitle}>Choisissez votre formule</Text>
         <Text style={styles.heroDesc}>
-          {JOVIAL_PRO_FREE_TRIAL_MONTHS} mois offerts à l'activation — aucun paiement avant la validation finale.
+          30 jours offerts à l'activation — aucun paiement avant la validation finale.
         </Text>
       </View>
 
@@ -201,6 +203,7 @@ export default function EstablishmentOffersScreen() {
               style={[
                 styles.card,
                 offer.recommended && styles.cardRecommended,
+                offer.key === "pro" && !isCurrent && styles.cardPro,
                 isCurrent && styles.cardCurrent,
               ]}
               onPress={() =>
@@ -217,11 +220,11 @@ export default function EstablishmentOffersScreen() {
                   <Text style={styles.recommendedBannerText}>Recommandée</Text>
                 </View>
               )}
-              {/* Upsell badge Pro pour les abonnés Rayonnement */}
-              {offer.key === "pro" && !isCurrent && currentOfferKey === "rayonnement" && (
+              {/* Badge Pro — visible pour tous sauf abonnés Pro actifs */}
+              {offer.key === "pro" && !isCurrent && (
                 <View style={[styles.recommendedBanner, styles.upsellBanner]}>
-                  <Ionicons name="flash" size={11} color={"#F97316"} />
-                  <Text style={[styles.recommendedBannerText, styles.upsellBannerText]}>Passez au niveau supérieur</Text>
+                  <Ionicons name="flash" size={11} color={Pastel.teal} />
+                  <Text style={[styles.recommendedBannerText, styles.upsellBannerText]}>Le plus complet</Text>
                 </View>
               )}
               {isCurrent && (
@@ -284,13 +287,14 @@ export default function EstablishmentOffersScreen() {
                 style={[
                   styles.cardCta,
                   offer.recommended && styles.cardCtaRecommended,
+                  offer.key === "pro" && !isCurrent && styles.cardCtaPro,
                   isCurrent && styles.cardCtaCurrent,
                 ]}
               >
                 <Text
                   style={[
                     styles.cardCtaText,
-                    (offer.recommended || isCurrent) && styles.cardCtaTextLight,
+                    (offer.recommended || offer.key === "pro" || isCurrent) && styles.cardCtaTextLight,
                   ]}
                 >
                   {isCurrent ? "Voir mon abonnement" : offer.primaryCta}
@@ -298,7 +302,7 @@ export default function EstablishmentOffersScreen() {
                 <Ionicons
                   name="arrow-forward"
                   size={14}
-                  color={offer.recommended || isCurrent ? "#FFFFFF" : "#2B4E93"}
+                  color={(offer.recommended || offer.key === "pro" || isCurrent) ? "#FFFFFF" : "#2B4E93"}
                 />
               </View>
             </Pressable>
@@ -325,7 +329,7 @@ export default function EstablishmentOffersScreen() {
 const REASSURANCE = [
   {
     icon: "gift-outline",
-    label: `${JOVIAL_PRO_FREE_TRIAL_MONTHS} mois offerts`,
+    label: `30 jours offerts`,
     desc: "Aucun prélèvement pendant la période d'essai.",
   },
   {
@@ -364,13 +368,28 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     paddingTop: 8,
+    position: "relative",
+    minHeight: 94,
   },
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  brandLogoCenter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 8,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandLogoTop: {
+    width: 230,
+    height: 86,
   },
   logoMini: {
     width: 34,
@@ -508,6 +527,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: "#FAFCFF",
   },
+  cardPro: {
+    borderColor: Pastel.teal,
+    borderWidth: 2,
+    backgroundColor: "#F6FEFE",
+  },
   cardCurrent: {
     borderColor: "#059669",
     borderWidth: 2,
@@ -522,6 +546,8 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     backgroundColor: "#EEF2FF",
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#2B4E93",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -538,12 +564,12 @@ const styles = StyleSheet.create({
     color: "#059669",
   },
   upsellBanner: {
-    backgroundColor: "#FFF7ED",
+    backgroundColor: Pastel.tealSoft,
     borderWidth: 1,
-    borderColor: "#FED7AA",
+    borderColor: Pastel.teal,
   },
   upsellBannerText: {
-    color: "#F97316",
+    color: Pastel.teal,
   },
 
   cardHeader: { gap: 3 },
@@ -623,6 +649,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#2B4E93",
     borderColor: "#2B4E93",
     shadowColor: "#2B4E93",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  cardCtaPro: {
+    backgroundColor: Pastel.teal,
+    borderColor: Pastel.teal,
+    shadowColor: Pastel.teal,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },

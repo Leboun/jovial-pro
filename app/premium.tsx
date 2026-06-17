@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -11,28 +12,33 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useIsPremium } from "@/hooks/useIsPremium";
+import {
+  getOfferingPackages,
+  purchasePackage,
+  restorePurchases,
+} from "@/services/purchases";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
 
-const MONTHLY_PRICE = "4,99 €";
-const YEARLY_PRICE = "49,99 €";
-const YEARLY_MONTHLY_EQUIV = "4,17 €";
-const YEARLY_SAVING = "30 jours offerts";
+const MONTHLY_PRICE = "2,99 €";
+const YEARLY_PRICE = "29,99 €";
+const YEARLY_MONTHLY_EQUIV = "2,49 €";
+const YEARLY_SAVING = "Meilleur prix";
 
 type Plan = "monthly" | "yearly";
 
 const FEATURES: { label: string; basic: string | boolean; plus: string | boolean }[] = [
-  { label: "Géolocalisation des bars", basic: true, plus: true },
+  { label: "Géolocalisation des établissements", basic: true, plus: true },
   { label: "Filtres avancés", basic: true, plus: true },
   { label: "Réservation d'activités", basic: true, plus: true },
   { label: "Accès à l'agenda des événements", basic: true, plus: true },
   { label: "Accès et création de club", basic: true, plus: true },
-  { label: "Ajout de bars / lieux favoris", basic: "2 max", plus: "Illimité" },
+  { label: "Ajout de lieux favoris", basic: "2 max", plus: "Illimité" },
   { label: "Offres privilèges dans les établissements", basic: false, plus: true },
-  { label: "Accès à l'agenda des copains", basic: false, plus: true },
-  { label: "Carte des bars favoris des amis", basic: false, plus: true },
+  { label: "Accès à l'agenda des amis", basic: false, plus: true },
+  { label: "Carte des lieux favoris des amis", basic: false, plus: true },
   { label: "Statistiques personnelles", basic: false, plus: true },
-  { label: "Statut Jovial+ (cercle doré sur la photo)", basic: false, plus: true },
+  { label: "Badge Jovial+ sur ton profil", basic: false, plus: true },
 ];
 
 export default function PremiumScreen() {
@@ -40,13 +46,59 @@ export default function PremiumScreen() {
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
   const [plan, setPlan] = useState<Plan>("yearly");
+  const [monthlyPkg, setMonthlyPkg] = useState<any>(null);
+  const [annualPkg, setAnnualPkg] = useState<any>(null);
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
-  const handleSubscribe = () => {
-    // TODO: intégrer RevenueCat ici
+  // Recupere les offres RevenueCat (vide tant que le SDK/les cles ne sont pas la)
+  useEffect(() => {
+    let cancelled = false;
+    getOfferingPackages().then((pkgs) => {
+      if (cancelled) return;
+      setMonthlyPkg(pkgs.find((p) => p?.packageType === "MONTHLY") ?? null);
+      setAnnualPkg(pkgs.find((p) => p?.packageType === "ANNUAL") ?? null);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Prix reels (depuis le store) si dispo, sinon prix affiches en dur
+  const monthlyPriceLabel = monthlyPkg?.product?.priceString ?? MONTHLY_PRICE;
+  const yearlyPriceLabel = annualPkg?.product?.priceString ?? YEARLY_PRICE;
+
+  const handleSubscribe = async () => {
+    const pkg = plan === "monthly" ? monthlyPkg : annualPkg;
+    if (!pkg) {
+      // SDK pas encore actif (build sans RevenueCat ou cles manquantes)
+      Alert.alert(
+        "Bientôt disponible",
+        "Le paiement arrive très prochainement. Merci pour ton intérêt pour Jovial+ !",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+    setPurchasing(true);
+    const res = await purchasePackage(pkg);
+    setPurchasing(false);
+    if (res.cancelled) return;
+    if (res.premium) {
+      Alert.alert("Bienvenue dans Jovial+ 🎉", "Ton abonnement est activé. Profite bien !", [
+        { text: "Super", onPress: () => router.back() },
+      ]);
+    } else {
+      Alert.alert("Oups", res.error ?? "Le paiement n'a pas pu aboutir. Réessaie dans un instant.");
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    const ok = await restorePurchases();
+    setRestoring(false);
     Alert.alert(
-      "Bientôt disponible",
-      "Le paiement sera disponible très prochainement. Merci pour ton intérêt pour Jovial+ !",
-      [{ text: "OK" }]
+      ok ? "Achats restaurés" : "Aucun achat trouvé",
+      ok
+        ? "Ton abonnement Jovial+ a été réactivé."
+        : "Aucun abonnement actif n'a été trouvé sur ce compte."
     );
   };
 
@@ -91,7 +143,7 @@ export default function PremiumScreen() {
 
         <View style={styles.priceBlock}>
           <Text style={styles.priceMain} adjustsFontSizeToFit numberOfLines={1}>
-            {plan === "monthly" ? MONTHLY_PRICE : YEARLY_PRICE}
+            {plan === "monthly" ? monthlyPriceLabel : yearlyPriceLabel}
           </Text>
           <Text style={styles.priceSub}>
             {plan === "monthly"
@@ -112,14 +164,30 @@ export default function PremiumScreen() {
             <Text style={styles.alreadyPremiumText}>Tu es déjà abonné à Jovial+</Text>
           </View>
         ) : (
-          <Pressable style={styles.cta} onPress={handleSubscribe}>
-            <Text style={styles.ctaText}>
-              {plan === "monthly" ? `S'abonner · ${MONTHLY_PRICE}/mois` : `S'abonner · ${YEARLY_PRICE}/an`}
-            </Text>
+          <Pressable
+            style={[styles.cta, purchasing ? styles.ctaDisabled : null]}
+            onPress={handleSubscribe}
+            disabled={purchasing}
+          >
+            {purchasing ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.ctaText}>Essayer 30 jours gratuitement</Text>
+            )}
           </Pressable>
         )}
 
-        <Text style={styles.ctaNote}>30 premiers jours offerts · Engagement minimum 1 an</Text>
+        {!isPremium ? (
+          <Text style={styles.ctaNote}>
+            {`Puis ${plan === "monthly" ? `${monthlyPriceLabel}/mois` : `${yearlyPriceLabel}/an`} · sans engagement, résiliable à tout moment`}
+          </Text>
+        ) : null}
+
+        <Pressable onPress={handleRestore} disabled={restoring} hitSlop={8} style={styles.restoreBtn}>
+          <Text style={styles.restoreText}>
+            {restoring ? "Restauration…" : "Restaurer mes achats"}
+          </Text>
+        </Pressable>
 
         <View style={styles.tableCard}>
           <View style={styles.tableHeader}>
@@ -234,8 +302,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  ctaDisabled: { opacity: 0.6 },
   ctaText: { color: "#FFFFFF", fontSize: 16, fontFamily: Font.extraBold, includeFontPadding: false },
   ctaNote: { textAlign: "center", fontSize: 11, color: Pastel.textMuted, fontFamily: Font.regular, includeFontPadding: false },
+  restoreBtn: { alignSelf: "center", paddingVertical: 6 },
+  restoreText: { fontSize: 13, color: Pastel.primary, fontFamily: Font.semiBold, textDecorationLine: "underline", includeFontPadding: false },
 
   tableCard: {
     backgroundColor: Pastel.surface,

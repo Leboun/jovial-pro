@@ -37,6 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     import("../services/push")
       .then(({ registerPushToken }) => registerPushToken(userId))
       .catch(() => undefined);
+    // Identifie l'utilisateur aupres de RevenueCat (no-op tant que les cles ne sont pas la)
+    import("../services/purchases")
+      .then(({ configurePurchases }) => configurePurchases(userId))
+      .catch(() => undefined);
   }, [session?.user?.id]);
 
   const value = useMemo(() => ({ session, loading }), [session, loading]);

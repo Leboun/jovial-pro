@@ -18,6 +18,9 @@ import { Font } from "@/constants/typography";
 import { supabase } from "@/services/supabase";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEstablishment } from "@/providers/EstablishmentProvider";
+import { planCodeToOfferKey } from "@/utils/jovialProBilling";
+
+const LOGO_BOX_H = 84; // hauteur du logo etablissement dans la sidebar (largeur adaptative)
 
 type NavItem = {
   href: string;
@@ -75,6 +78,25 @@ export default function JovialProShell({
   const [newNotifCount, setNewNotifCount] = useState(0);
   const { subscription, venue, loading: subLoading } = useEstablishment();
   const planCode = subscription?.plan ?? null;
+  // Ratio du logo etablissement pour l'afficher de maniere adaptative (carre / rectangle / long).
+  const [logoAspect, setLogoAspect] = useState<number | null>(null);
+  useEffect(() => {
+    setLogoAspect(null);
+    if (!venue?.logo_url) return;
+    Image.getSize(
+      venue.logo_url,
+      (w, h) => { if (h > 0) setLogoAspect(w / h); },
+      () => setLogoAspect(null)
+    );
+  }, [venue?.logo_url]);
+  // Destination directe pour l'onglet "Mon offre" : si un abonnement est actif,
+  // on va droit a la page detail de l'offre pour eviter le saut (page liste -> redirection).
+  const activeOfferKey =
+    subscription && subscription.status === "active" ? planCodeToOfferKey(subscription.plan) : null;
+  const resolveHref = (href: string) =>
+    href === "/establishment/subscription" && activeOfferKey
+      ? `/establishment/subscription/${activeOfferKey}`
+      : href;
 
   useEffect(() => {
     if (!venue?.id) return;
@@ -122,18 +144,27 @@ export default function JovialProShell({
       ) : null}
 
       <View style={styles.brandBlock}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandLogoSmall}>
-            {venue?.logo_url ? (
-              <Image source={{ uri: venue.logo_url }} style={styles.brandLogoImg} resizeMode="cover" />
-            ) : (
-              <Text style={styles.brandLogoText}>J</Text>
-            )}
-          </View>
-          <View style={styles.brandTextBlock}>
+        {venue?.logo_url ? (
+          <Image
+            source={{ uri: venue.logo_url }}
+            style={[
+              styles.brandLogoAdaptive,
+              { width: LOGO_BOX_H * Math.min(2.8, Math.max(0.8, logoAspect ?? 1)) },
+            ]}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.brandRow}>
+            <View style={styles.brandLogoSmall}>
+              <Image
+                source={require("../../assets/images/logo_mascotte.png")}
+                style={styles.brandLogoImg}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.brandTitle}>Jovial Pro</Text>
           </View>
-        </View>
+        )}
         <Text style={styles.brandText}>
           Gère ta fiche, tes activités, tes événements et tes réservations.
         </Text>
@@ -141,7 +172,10 @@ export default function JovialProShell({
 
       <View style={styles.navList}>
         {navItems.map((item) => {
-          const active = currentPath === item.href;
+          const active =
+            currentPath === item.href ||
+            (item.href === "/establishment/subscription" &&
+              currentPath.startsWith("/establishment/subscription"));
           const locked = isLocked(item);
           return (
             <Pressable
@@ -151,7 +185,7 @@ export default function JovialProShell({
                 if (locked) {
                   router.push("/establishment/subscription" as any);
                 } else {
-                  router.push(item.href as any);
+                  router.push(resolveHref(item.href) as any);
                 }
               }}
             >
@@ -193,9 +227,18 @@ export default function JovialProShell({
       ) : (
         <Pressable style={styles.logoutBtn} onPress={() => setConfirmLogout(true)}>
           <Ionicons name="log-out-outline" size={16} color={Pastel.danger} />
-          <Text style={styles.logoutText}>Déconnexion</Text>
+          <Text style={styles.logoutText} numberOfLines={1}>Se déconnecter</Text>
         </Pressable>
       )}
+
+      <View style={styles.brandFooter}>
+        <Image
+          source={require("../../assets/images/logo_jovial.png")}
+          style={styles.brandFooterLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.brandFooterText}>Propulsé par Jovial</Text>
+      </View>
     </View>
   );
 
@@ -282,10 +325,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   sidebar: {
-    width: 196,
+    width: 230,
+    minWidth: 230,
+    maxWidth: 230,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   sidebarContent: {
-    padding: 20,
+    padding: 16,
     paddingRight: 0,
     flexGrow: 1,
     paddingBottom: 24,
@@ -329,20 +376,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  brandLogoAdaptive: {
+    height: LOGO_BOX_H,
+    maxWidth: "100%",
+    alignSelf: "center",
+  },
   brandLogoSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Pastel.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   brandLogoImg: { width: "100%", height: "100%" },
   brandLogoText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "900",
+    color: Pastel.primary,
+    fontSize: 30,
+    fontFamily: Font.display,
     letterSpacing: -0.5,
   },
   brandTextBlock: {
@@ -365,6 +416,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontFamily: Font.regular,
+  },
+  brandFooter: {
+    alignItems: "center",
+    gap: 5,
+    paddingTop: 6,
+  },
+  brandFooterLogo: {
+    width: 104,
+    height: 38,
+  },
+  brandFooterText: {
+    color: Pastel.textMuted,
+    fontSize: 10,
+    fontFamily: Font.semiBold,
+    letterSpacing: 0.4,
   },
   navList: {
     gap: 6,
@@ -452,11 +518,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   logoutConfirmRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 8,
   },
   logoutConfirmCancel: {
-    flex: 1,
+    alignSelf: "stretch",
     alignItems: "center",
     paddingVertical: 9,
     borderRadius: 10,
@@ -470,7 +536,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   logoutConfirmOk: {
-    flex: 1,
+    alignSelf: "stretch",
     alignItems: "center",
     paddingVertical: 9,
     borderRadius: 10,

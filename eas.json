@@ -31,7 +31,9 @@
         "APP_ENV": "preview",
         "EXPO_PUBLIC_SUPABASE_URL": "https://luwspwiibxzzjvbtklbo.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1d3Nwd2lpYnh6emp2YnRrbGJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDMzNDUsImV4cCI6MjA3MzExOTM0NX0.cD3SpHJgyzxsJwfw5a2gDseih7A8giU_thIrQAGcXgg",
-        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD6vjFeK-PRb3bgM4JfJoHNiEeVZwVz6G8"
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD6vjFeK-PRb3bgM4JfJoHNiEeVZwVz6G8",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_eOMJDOkdCottyrBhSnylZTsundI",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "test_fHzwknGBnBifnadxBaCYoslqOro"
       }
     },
     "production": {
@@ -49,7 +51,7 @@
       "ios": {
         "appleId": "vialetteesteban@gmail.com",
         "ascAppId": "REMPLACER_PAR_TON_APP_STORE_CONNECT_ID",
-        "appleTeamId": "REMPLACER_PAR_TON_TEAM_ID"
+        "appleTeamId": "2PKZL7DXX9"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services-key.json",

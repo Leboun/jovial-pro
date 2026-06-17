@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,6 +8,8 @@ import JovialProShell from "@/components/ui/JovialProShell";
 import { useAuth } from "@/providers/AuthProvider";
 import { ensureEstablishmentFeatureAccess } from "@/utils/establishmentProGate";
 import { supabase } from "@/services/supabase";
+import { Pastel } from "@/constants/pastel";
+import { Font } from "@/constants/typography";
 
 type NotifRow = {
   id: number;
@@ -94,16 +96,16 @@ export default function EstablishmentNotificationsScreen() {
     >
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color="#2B4E93" />
+          <ActivityIndicator color={Pastel.teal} size="large" />
         </View>
       ) : notifications.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="notifications-off-outline" size={48} color="#E5E7EB" />
+        <View style={styles.emptyCard}>
+          <Ionicons name="notifications-off-outline" size={36} color={Pastel.teal} />
           <Text style={styles.emptyTitle}>Aucune notification</Text>
-          <Text style={styles.emptyText}>Les nouvelles réservations apparaîtront ici.</Text>
+          <Text style={styles.emptyText}>Les nouvelles réservations des 30 derniers jours apparaîtront ici.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        <View style={styles.list}>
           {notifications.map((notif) => {
             const fresh = isNew(notif.created_at);
             const name = [notif.contact_firstname, notif.contact_lastname].filter(Boolean).join(" ") || "Client";
@@ -116,7 +118,7 @@ export default function EstablishmentNotificationsScreen() {
                     <Ionicons
                       name={cancelledStatus ? "close-circle" : "bookmark"}
                       size={18}
-                      color={cancelledStatus ? "#DC2626" : fresh ? "#059669" : "#6B7280"}
+                      color={cancelledStatus ? Pastel.danger : fresh ? Pastel.teal : Pastel.textMuted}
                     />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
@@ -136,7 +138,7 @@ export default function EstablishmentNotificationsScreen() {
 
                 <View style={styles.cardDetails}>
                   <View style={styles.detailRow}>
-                    <Ionicons name="calendar-outline" size={13} color="#6B7280" />
+                    <Ionicons name="calendar-outline" size={13} color={Pastel.teal} />
                     <Text style={styles.detailText} numberOfLines={1}>{formatDate(notif.starts_at)}</Text>
                   </View>
                   {notif.contact_phone ? (
@@ -147,18 +149,18 @@ export default function EstablishmentNotificationsScreen() {
                         Linking.openURL(`tel:${notif.contact_phone}`).catch(() => undefined);
                       }}
                     >
-                      <Ionicons name="call-outline" size={13} color="#6366F1" />
+                      <Ionicons name="call-outline" size={13} color={Pastel.teal} />
                       <Text style={[styles.detailText, styles.detailLink]}>{notif.contact_phone}</Text>
                     </Pressable>
                   ) : null}
                   {notif.group_size ? (
                     <View style={styles.detailRow}>
-                      <Ionicons name="people-outline" size={13} color="#6B7280" />
+                      <Ionicons name="people-outline" size={13} color={Pastel.textMuted} />
                       <Text style={styles.detailText}>{notif.group_size} personne{notif.group_size > 1 ? "s" : ""}</Text>
                     </View>
                   ) : null}
                   <View style={styles.detailRow}>
-                    <Ionicons name="card-outline" size={13} color="#6B7280" />
+                    <Ionicons name="card-outline" size={13} color={Pastel.textMuted} />
                     <Text style={styles.detailText}>
                       {formatPrice(notif.price_cents, notif.currency)}
                       {notif.payment_status === "paid" ? "  ✓ Payé" : notif.payment_status === "unpaid" ? "  · En attente" : ""}
@@ -172,7 +174,7 @@ export default function EstablishmentNotificationsScreen() {
               </View>
             );
           })}
-        </ScrollView>
+        </View>
       )}
     </JovialProShell>
   );
@@ -180,46 +182,33 @@ export default function EstablishmentNotificationsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 40 },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: "#374151" },
-  emptyText: { fontSize: 14, color: "#9CA3AF", textAlign: "center" },
+  emptyCard: { backgroundColor: Pastel.surface, borderRadius: 22, borderWidth: 1, borderColor: Pastel.border, padding: 28, gap: 10, alignItems: "center" },
+  emptyTitle: { fontSize: 18, fontFamily: Font.extraBold, color: Pastel.text, includeFontPadding: false },
+  emptyText: { fontSize: 14, fontFamily: Font.regular, color: Pastel.textMuted, textAlign: "center", lineHeight: 20, includeFontPadding: false },
 
-  list: { padding: 16, gap: 12, paddingBottom: 60 },
+  list: { gap: 12 },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 14,
-    gap: 10,
-  },
-  cardNew: {
-    borderColor: "#BBF7D0",
-    backgroundColor: "#F0FDF4",
-  },
-  cardCancelled: {
-    borderColor: "#FECACA",
-    backgroundColor: "#FFF5F5",
-    opacity: 0.8,
-  },
+  card: { backgroundColor: Pastel.surface, borderRadius: 18, borderWidth: 1, borderColor: Pastel.border, padding: 14, gap: 10 },
+  cardNew: { borderColor: Pastel.teal, borderWidth: 2, backgroundColor: Pastel.tealSoft },
+  cardCancelled: { borderColor: "#FECACA", backgroundColor: "#FFF5F5", opacity: 0.8 },
 
   cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  iconWrapNew: { backgroundColor: "#D1FAE5" },
-  iconWrapDefault: { backgroundColor: "#F3F4F6" },
+  iconWrapNew: { backgroundColor: Pastel.tealSoft },
+  iconWrapDefault: { backgroundColor: Pastel.surfaceAlt },
   iconWrapCancelled: { backgroundColor: "#FEE2E2" },
 
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: "#111827", flex: 1 },
-  cardActivity: { fontSize: 12, color: "#6B7280", fontWeight: "600" },
+  cardTitle: { fontSize: 14, fontFamily: Font.extraBold, color: Pastel.text, flex: 1, includeFontPadding: false },
+  cardActivity: { fontSize: 12, fontFamily: Font.semiBold, color: Pastel.textMuted, includeFontPadding: false },
 
-  newBadge: { backgroundColor: "#059669", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  newBadgeText: { fontSize: 10, fontWeight: "800", color: "#FFFFFF" },
+  newBadge: { backgroundColor: Pastel.teal, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  newBadgeText: { fontSize: 10, fontFamily: Font.extraBold, color: "#FFFFFF", includeFontPadding: false },
 
   cardDetails: { gap: 6, paddingLeft: 46 },
   detailRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  detailText: { fontSize: 12, color: "#374151" },
-  detailLink: { color: "#6366F1", fontWeight: "600" },
+  detailText: { fontSize: 12, fontFamily: Font.regular, color: Pastel.text, includeFontPadding: false },
+  detailLink: { color: Pastel.teal, fontFamily: Font.semiBold },
 
-  cardDate: { fontSize: 11, color: "#9CA3AF", paddingLeft: 46 },
+  cardDate: { fontSize: 11, fontFamily: Font.regular, color: Pastel.textMuted, paddingLeft: 46, includeFontPadding: false },
 });

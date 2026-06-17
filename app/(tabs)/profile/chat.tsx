@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -11,7 +13,8 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -28,7 +31,13 @@ type ChatMessage = {
   recipient_id: string | null;
   body: string;
   created_at: string;
+  reply_to_id: number | null;
+  edited_at: string | null;
 };
+
+type ReactionRow = { message_id: number; user_id: string; emoji: string };
+
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "🔥"];
 
 type ProfileLite = {
   user_id: string;
@@ -60,6 +69,17 @@ function formatHour(iso: string) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+function formatFullDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 function matchesSearch(profile: ProfileLite, query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -75,13 +95,40 @@ function avatarColor(userId: string) {
   return AVATAR_COLORS[n % AVATAR_COLORS.length];
 }
 
+// Avatar : photo de profil si disponible, sinon cercle colore avec initiales.
+function ChatAvatar({
+  profile,
+  userId,
+  style,
+  textStyle,
+}: {
+  profile?: ProfileLite | null;
+  userId: string;
+  style: any;
+  textStyle: any;
+}) {
+  const uri = profile?.avatar_url?.trim();
+  if (uri) {
+    return <Image source={{ uri }} style={style} contentFit="cover" transition={120} />;
+  }
+  return (
+    <View style={[style, { backgroundColor: avatarColor(userId) }]}>
+      <Text style={textStyle}>{getInitials(profile)}</Text>
+    </View>
+  );
+}
+
 export default function ProfileChatScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+  const { friend: friendParam } = useLocalSearchParams<{ friend?: string }>();
+  const [expandedMsgId, setExpandedMsgId] = useState<number | null>(null);
 
   const listRef = useRef<FlatList<ChatMessage> | null>(null);
+  const initialLoadDone = useRef(false);
+  const messageIdsRef = useRef<number[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [friends, setFriends] = useState<ProfileLite[]>([]);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
@@ -89,11 +136,20 @@ export default function ProfileChatScreen() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [reactions, setReactions] = useState<Record<number, ReactionRow[]>>({});
+  const [actionMsg, setActionMsg] = useState<ChatMessage | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [editingMsg, setEditingMsg] = useState<ChatMessage | null>(null);
 
   const selectedFriend = useMemo(
     () => friends.find((f) => f.user_id === selectedFriendId) ?? null,
     [friends, selectedFriendId]
   );
+
+  // Ouverture directe d'une conversation (ex: depuis une notification de message)
+  useEffect(() => {
+    if (friendParam) setSelectedFriendId(friendParam);
+  }, [friendParam]);
 
   const filteredFriends = useMemo(
     () => friends.filter((f) => matchesSearch(f, friendQuery)),
@@ -128,21 +184,50 @@ export default function ProfileChatScreen() {
     });
   }, [userId]);
 
+  // Charge uniquement les reactions (sans toucher au spinner ni recharger les messages)
+  const loadReactions = useCallback(async (ids: number[]) => {
+    if (!ids.length) { setReactions({}); return; }
+    const { data: reacts } = await supabase
+      .from("message_reactions")
+      .select("message_id, user_id, emoji")
+      .in("message_id", ids);
+    const map: Record<number, ReactionRow[]> = {};
+    ((reacts as ReactionRow[] | null) ?? []).forEach((r) => {
+      (map[r.message_id] = map[r.message_id] ?? []).push(r);
+    });
+    setReactions(map);
+  }, []);
+
   const loadMessages = useCallback(async () => {
-    if (!userId || !selectedFriendId) { setMessages([]); setLoading(false); return; }
-    setLoading(true);
+    if (!userId || !selectedFriendId) { setMessages([]); setReactions({}); setLoading(false); return; }
+    // Spinner plein ecran UNIQUEMENT au 1er chargement d'une conversation (sinon la liste
+    // se demonterait/clignoterait a chaque action ou message recu).
+    if (!initialLoadDone.current) setLoading(true);
     const { data, error } = await supabase
       .from("chat_messages")
-      .select("id, sender_id, recipient_id, body, created_at")
+      .select("id, sender_id, recipient_id, body, created_at, reply_to_id, edited_at")
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${selectedFriendId}),and(sender_id.eq.${selectedFriendId},recipient_id.eq.${userId})`)
       .order("created_at", { ascending: true })
       .limit(120);
-    if (!error) setMessages((data as ChatMessage[] | null) ?? []);
+    const list = (data as ChatMessage[] | null) ?? [];
+    if (!error) setMessages(list);
+    initialLoadDone.current = true;
     setLoading(false);
-  }, [selectedFriendId, userId]);
+    await loadReactions(list.map((m) => m.id));
+  }, [selectedFriendId, userId, loadReactions]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
+  useEffect(() => { initialLoadDone.current = false; }, [selectedFriendId]);
   useEffect(() => { loadMessages(); }, [loadMessages, selectedFriendId]);
+  useEffect(() => { messageIdsRef.current = messages.map((m) => m.id); }, [messages]);
+
+  // A l'ouverture d'une conversation (ou apres chargement), se placer sur le dernier message.
+  useEffect(() => {
+    if (loading || messages.length === 0) return;
+    const t1 = setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 60);
+    const t2 = setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [loading, messages, selectedFriendId]);
 
   // Mark all messages as read when the chat screen is open
   useEffect(() => {
@@ -156,10 +241,11 @@ export default function ProfileChatScreen() {
   useEffect(() => {
     const channel = supabase
       .channel("chat_messages_updates")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => { loadMessages(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => { loadMessages(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => { loadReactions(messageIdsRef.current); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [loadMessages]);
+  }, [loadMessages, loadReactions]);
 
   const canSend = useMemo(
     () => !!userId && !!selectedFriendId && input.trim().length > 0 && !sending,
@@ -171,9 +257,28 @@ export default function ProfileChatScreen() {
     const body = input.trim();
     if (!body) return;
     setSending(true);
-    const { error } = await supabase.from("chat_messages").insert({ sender_id: userId, recipient_id: selectedFriendId, body });
+
+    // Mode modification d'un message existant
+    if (editingMsg) {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({ body, edited_at: new Date().toISOString() })
+        .eq("id", editingMsg.id);
+      if (!error) {
+        setInput("");
+        setEditingMsg(null);
+        await loadMessages();
+      }
+      setSending(false);
+      return;
+    }
+
+    const payload: any = { sender_id: userId, recipient_id: selectedFriendId, body };
+    if (replyingTo) payload.reply_to_id = replyingTo.id;
+    const { error } = await supabase.from("chat_messages").insert(payload);
     if (!error) {
       setInput("");
+      setReplyingTo(null);
       await loadMessages();
       listRef.current?.scrollToEnd({ animated: true });
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
@@ -187,7 +292,56 @@ export default function ProfileChatScreen() {
       }
     }
     setSending(false);
-  }, [canSend, input, loadMessages, selectedFriendId, userId]);
+  }, [canSend, editingMsg, input, loadMessages, replyingTo, selectedFriendId, userId]);
+
+  // Ajoute / change / retire SA reaction sur un message
+  const toggleReaction = useCallback(async (message: ChatMessage, emoji: string) => {
+    if (!userId) return;
+    setActionMsg(null);
+    const mine = (reactions[message.id] ?? []).find((r) => r.user_id === userId);
+    try {
+      if (mine && mine.emoji === emoji) {
+        await supabase.from("message_reactions").delete().eq("message_id", message.id).eq("user_id", userId);
+      } else {
+        await supabase
+          .from("message_reactions")
+          .upsert({ message_id: message.id, user_id: userId, emoji }, { onConflict: "message_id,user_id" });
+      }
+      await loadReactions(messages.map((m) => m.id));
+    } catch { /* ignore */ }
+  }, [reactions, userId, messages, loadReactions]);
+
+  const handleDelete = useCallback((message: ChatMessage) => {
+    setActionMsg(null);
+    Alert.alert("Supprimer le message", "Ce message sera définitivement supprimé.", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await supabase.from("chat_messages").delete().eq("id", message.id);
+            await loadMessages();
+          } catch { /* ignore */ }
+        },
+      },
+    ]);
+  }, [loadMessages]);
+
+  const startReply = useCallback((message: ChatMessage) => {
+    setActionMsg(null);
+    // Si on etait en mode modification, on remet l'input a zero (sinon on garde le brouillon en cours).
+    if (editingMsg) setInput("");
+    setEditingMsg(null);
+    setReplyingTo(message);
+  }, [editingMsg]);
+
+  const startEdit = useCallback((message: ChatMessage) => {
+    setActionMsg(null);
+    setReplyingTo(null);
+    setEditingMsg(message);
+    setInput(message.body);
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -211,9 +365,12 @@ export default function ProfileChatScreen() {
           )}
         </View>
         {selectedFriend ? (
-          <View style={[styles.avatarCircle, { backgroundColor: avatarColor(selectedFriend.user_id) }]}>
-            <Text style={styles.avatarText}>{getInitials(selectedFriend)}</Text>
-          </View>
+          <ChatAvatar
+            profile={selectedFriend}
+            userId={selectedFriend.user_id}
+            style={styles.avatarCircle}
+            textStyle={styles.avatarText}
+          />
         ) : null}
       </View>
 
@@ -238,12 +395,14 @@ export default function ProfileChatScreen() {
             contentContainerStyle={styles.friendsRow}
             renderItem={({ item }) => {
               const active = item.user_id === selectedFriendId;
-              const color = avatarColor(item.user_id);
               return (
                 <Pressable style={styles.friendItem} onPress={() => setSelectedFriendId(item.user_id)}>
-                  <View style={[styles.friendAvatar, { backgroundColor: color }, active ? styles.friendAvatarActive : null]}>
-                    <Text style={styles.friendAvatarText}>{getInitials(item)}</Text>
-                  </View>
+                  <ChatAvatar
+                    profile={item}
+                    userId={item.user_id}
+                    style={[styles.friendAvatar, active ? styles.friendAvatarActive : null]}
+                    textStyle={styles.friendAvatarText}
+                  />
                   <Text style={[styles.friendName, active ? styles.friendNameActive : null]} numberOfLines={1}>
                     {getDisplayName(item)}
                   </Text>
@@ -285,21 +444,78 @@ export default function ProfileChatScreen() {
             return (
               <View style={[styles.bubbleWrap, mine ? styles.bubbleWrapMine : null]}>
                 {!mine ? (
-                  <View style={[styles.msgAvatar, { backgroundColor: avatarColor(item.sender_id) }]}>
-                    <Text style={styles.msgAvatarText}>{getInitials(selectedFriend)}</Text>
-                  </View>
+                  <ChatAvatar
+                    profile={selectedFriend}
+                    userId={item.sender_id}
+                    style={styles.msgAvatar}
+                    textStyle={styles.msgAvatarText}
+                  />
                 ) : null}
                 <View style={styles.bubbleCol}>
-                  <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-                    <Text style={[styles.body, mine ? styles.bodyMine : null]}>{item.body}</Text>
+                  <View
+                    style={[
+                      styles.bubbleHolder,
+                      mine ? styles.bubbleHolderMine : styles.bubbleHolderOther,
+                      (reactions[item.id]?.length ?? 0) > 0 ? styles.bubbleHolderReacted : null,
+                    ]}
+                  >
+                    <Pressable
+                      onPress={() => setExpandedMsgId((prev) => (prev === item.id ? null : item.id))}
+                      onLongPress={() => setActionMsg(item)}
+                      delayLongPress={250}
+                      style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}
+                    >
+                      {item.reply_to_id ? (
+                        <View style={[styles.quoteBox, mine ? styles.quoteBoxMine : null]}>
+                          <Text style={[styles.quoteText, mine ? styles.quoteTextMine : null]} numberOfLines={1}>
+                            {messages.find((m) => m.id === item.reply_to_id)?.body ?? "Message supprimé"}
+                          </Text>
+                        </View>
+                      ) : null}
+                      <Text style={[styles.body, mine ? styles.bodyMine : null]}>{item.body}</Text>
+                    </Pressable>
+
+                    {(reactions[item.id]?.length ?? 0) > 0 ? (
+                      <View style={[styles.reactionBadge, mine ? styles.reactionBadgeMine : styles.reactionBadgeOther]}>
+                        <Text style={styles.reactionBadgeEmoji}>
+                          {Array.from(new Set((reactions[item.id] ?? []).map((r) => r.emoji))).join(" ")}
+                        </Text>
+                        {(reactions[item.id]?.length ?? 0) > 1 ? (
+                          <Text style={styles.reactionBadgeCount}>{reactions[item.id]?.length}</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
                   </View>
-                  <Text style={[styles.time, mine ? styles.timeMine : null]}>{formatHour(item.created_at)}</Text>
+
+                  <Text style={[styles.time, mine ? styles.timeMine : null]}>
+                    {expandedMsgId === item.id
+                      ? `${formatFullDate(item.created_at)} · ${formatHour(item.created_at)}`
+                      : formatHour(item.created_at)}
+                    {item.edited_at ? " · modifié" : ""}
+                  </Text>
                 </View>
               </View>
             );
           }}
         />
       )}
+
+      {/* ── BANDEAU RÉPONSE / MODIFICATION ── */}
+      {replyingTo || editingMsg ? (
+        <View style={styles.replyBar}>
+          <Ionicons name={editingMsg ? "create-outline" : "arrow-undo-outline"} size={16} color={Pastel.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.replyBarLabel}>{editingMsg ? "Modification du message" : "Réponse"}</Text>
+            <Text style={styles.replyBarText} numberOfLines={1}>{(editingMsg ?? replyingTo)?.body}</Text>
+          </View>
+          <Pressable
+            onPress={() => { if (editingMsg) setInput(""); setEditingMsg(null); setReplyingTo(null); }}
+            hitSlop={8}
+          >
+            <Ionicons name="close" size={18} color={Pastel.textMuted} />
+          </Pressable>
+        </View>
+      ) : null}
 
       {/* ── COMPOSER ── */}
       <View style={[styles.composer, { paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }]}>
@@ -318,9 +534,60 @@ export default function ProfileChatScreen() {
           onPress={handleSend}
           disabled={!canSend}
         >
-          <Ionicons name="send" size={16} color={canSend ? "#FFFFFF" : Pastel.textMuted} />
+          <Ionicons name={editingMsg ? "checkmark" : "send"} size={16} color={canSend ? "#FFFFFF" : Pastel.textMuted} />
         </Pressable>
       </View>
+
+      {/* ── MENU APPUI LONG SUR UN MESSAGE ── */}
+      <Modal visible={!!actionMsg} transparent animationType="fade" onRequestClose={() => setActionMsg(null)}>
+        <Pressable
+          style={[styles.menuOverlay, actionMsg?.sender_id === userId ? styles.menuOverlayMine : styles.menuOverlayOther]}
+          onPress={() => setActionMsg(null)}
+        >
+          {actionMsg ? (
+            <Pressable
+              style={[styles.menuGroup, actionMsg.sender_id === userId ? styles.menuGroupMine : styles.menuGroupOther]}
+              onPress={() => {}}
+            >
+              {/* Barre d'emojis — au-dessus du message */}
+              <View style={styles.reactionBar}>
+                {REACTION_EMOJIS.map((emoji) => (
+                  <Pressable key={emoji} onPress={() => toggleReaction(actionMsg, emoji)} style={styles.reactionBarBtn} hitSlop={6}>
+                    <Text style={styles.reactionBarEmoji}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Le message sélectionné — net, en place */}
+              <View style={[styles.bubble, actionMsg.sender_id === userId ? styles.bubbleMine : styles.bubbleOther, styles.menuBubble]}>
+                <Text style={[styles.body, actionMsg.sender_id === userId ? styles.bodyMine : null]} numberOfLines={8}>
+                  {actionMsg.body}
+                </Text>
+              </View>
+
+              {/* Menu d'actions — en-dessous */}
+              <View style={styles.menuCard}>
+                <Pressable style={styles.menuItem} onPress={() => startReply(actionMsg)}>
+                  <Ionicons name="arrow-undo-outline" size={19} color={Pastel.text} />
+                  <Text style={styles.menuItemText}>Répondre</Text>
+                </Pressable>
+                {actionMsg.sender_id === userId ? (
+                  <>
+                    <Pressable style={[styles.menuItem, styles.menuItemBorder]} onPress={() => startEdit(actionMsg)}>
+                      <Ionicons name="create-outline" size={19} color={Pastel.text} />
+                      <Text style={styles.menuItemText}>Modifier</Text>
+                    </Pressable>
+                    <Pressable style={[styles.menuItem, styles.menuItemBorder]} onPress={() => handleDelete(actionMsg)}>
+                      <Ionicons name="trash-outline" size={19} color="#EF4444" />
+                      <Text style={[styles.menuItemText, { color: "#EF4444" }]}>Supprimer</Text>
+                    </Pressable>
+                  </>
+                ) : null}
+              </View>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -440,4 +707,90 @@ const styles = StyleSheet.create({
     backgroundColor: Pastel.primary,
   },
   sendBtnDisabled: { backgroundColor: Pastel.surfaceAlt },
+
+  // Citation (reponse a un message)
+  quoteBox: { borderLeftWidth: 3, borderLeftColor: Pastel.teal, paddingLeft: 8, marginBottom: 5 },
+  quoteBoxMine: { borderLeftColor: "rgba(255,255,255,0.7)" },
+  quoteText: { fontSize: 12, color: Pastel.textMuted, fontFamily: Font.regular, fontStyle: "italic" },
+  quoteTextMine: { color: "rgba(255,255,255,0.85)" },
+
+  // Reaction : petit badge colle au coin du message (plus de pastille separee)
+  bubbleHolder: { position: "relative" },
+  bubbleHolderMine: { alignSelf: "flex-end" },
+  bubbleHolderOther: { alignSelf: "flex-start" },
+  bubbleHolderReacted: { marginBottom: 10 },
+  reactionBadge: {
+    position: "absolute",
+    bottom: -10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: Pastel.surface,
+    borderWidth: 0.5,
+    borderColor: Pastel.border,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  reactionBadgeMine: { right: 4 },
+  reactionBadgeOther: { left: 4 },
+  reactionBadgeEmoji: { fontSize: 12, includeFontPadding: false },
+  reactionBadgeCount: { fontSize: 11, color: Pastel.textMuted, fontFamily: Font.bold, includeFontPadding: false },
+
+  // Bandeau reponse / modification (au-dessus du composer)
+  replyBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Pastel.surfaceAlt,
+    borderTopWidth: 1,
+    borderTopColor: Pastel.border,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  replyBarLabel: { fontSize: 11, color: Pastel.primary, fontFamily: Font.bold, includeFontPadding: false },
+  replyBarText: { fontSize: 13, color: Pastel.textMuted, fontFamily: Font.regular, includeFontPadding: false },
+
+  // Menu appui long (style iMessage : emojis au-dessus, message net, actions en-dessous)
+  menuOverlay: { flex: 1, backgroundColor: "rgba(15,18,30,0.45)", justifyContent: "center", paddingHorizontal: 18 },
+  menuOverlayMine: { alignItems: "flex-end" },
+  menuOverlayOther: { alignItems: "flex-start" },
+  menuGroup: { gap: 9, maxWidth: "92%" },
+  menuGroupMine: { alignItems: "flex-end" },
+  menuGroupOther: { alignItems: "flex-start" },
+  reactionBar: {
+    flexDirection: "row",
+    gap: 14,
+    backgroundColor: Pastel.surface,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  reactionBarBtn: { paddingHorizontal: 1 },
+  reactionBarEmoji: { fontSize: 26, includeFontPadding: false },
+  menuBubble: { maxWidth: "80%" },
+  menuCard: {
+    backgroundColor: Pastel.surface,
+    borderRadius: 14,
+    width: 200,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  menuItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  menuItemBorder: { borderTopWidth: 0.5, borderTopColor: Pastel.border },
+  menuItemText: { fontSize: 14, color: Pastel.text, fontFamily: Font.semiBold, includeFontPadding: false },
 });

@@ -45,6 +45,7 @@ import { StatusBar } from "expo-status-bar";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
 import * as Calendar from "expo-calendar";
+import { getActivityEmoji as activityEmoji } from "@/utils/activityEmoji";
 
 type SocialPlatform = "instagram" | "facebook";
 
@@ -59,6 +60,8 @@ type Venue = {
   venue_type: string | null;
   venue_ambiance: string[] | null;
   service_tags: string[] | null;
+  food_tags: string[] | null;
+  payment_tags: string[] | null;
 
   social_platform: SocialPlatform | null;
   social_url: string | null;
@@ -142,25 +145,7 @@ function getQuantityUnit(name: string, quantity: number): string {
   return p ? "disponibles" : "disponible";
 }
 
-function activityEmoji(name: string) {
-  const v = normalizeActivity(name);
-  if (v.includes("flechette") || v.includes("dart")) return "🎯";
-  if (v.includes("billard") || v.includes("pool")) return "🎱";
-  if (v.includes("babyfoot") || v.includes("baby foot") || v.includes("baby-foot") || v.includes("foosball")) return "⚽";
-  if (v.includes("palet")) return "🥏";
-  if (v.includes("petanque")) return "🥎";
-  if (v.includes("bowling")) return "🎳";
-  if (v.includes("beer pong") || v.includes("beerpong")) return "🍺";
-  if (v.includes("hache") || v.includes("axe")) return "🪓";
-  if (v.includes("karaok")) return "🎤";
-  if (v.includes("blind") || v.includes("quiz")) return "🎵";
-  if (v.includes("carte") || v.includes("poker")) return "🃏";
-  if (v.includes("echec")) return "♟️";
-  if (v.includes("ping") || v.includes("tennis de table") || v.includes("tennis")) return "🏓";
-  if (v.includes("jeu") || v.includes("societe")) return "🎲";
-  if (v.includes("wine") || v.includes("vin")) return "🍷";
-  return "🎮";
-}
+// activityEmoji est centralise dans "@/utils/activityEmoji" (importe en haut, alias activityEmoji).
 
 function normalizePhone(raw?: string | null) {
   return (raw ?? "").trim();
@@ -201,6 +186,8 @@ export default function VenueScreen() {
   const [perksPreviewOpen, setPerksPreviewOpen] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [showAllEvents, setShowAllEvents] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [descShowToggle, setDescShowToggle] = useState(false);
   const [bookingActivity, setBookingActivity] = useState<VenueActivity | null>(null);
   const [bookingDate, setBookingDate] = useState<Date>(new Date());
   const [availableSlots, setAvailableSlots] = useState<SlotOption[]>([]);
@@ -308,6 +295,8 @@ export default function VenueScreen() {
             venue_type: null,
             venue_ambiance: null,
             service_tags: null,
+            food_tags: null,
+            payment_tags: null,
             social_platform: demoVenue.social_platform,
             social_url: demoVenue.social_url,
             cover_url: demoVenue.cover_url,
@@ -339,7 +328,7 @@ export default function VenueScreen() {
       const { data, error } = await supabase
         .from("venues")
         .select(
-          "id, name, city, address, postcode, contact, description, venue_type, venue_ambiance, service_tags, lat, lng, cover_url, logo_url, photos, social_platform, social_url, opening_hours, timezone"
+          "id, name, city, address, postcode, contact, description, venue_type, venue_ambiance, service_tags, food_tags, payment_tags, lat, lng, cover_url, logo_url, photos, social_platform, social_url, opening_hours, timezone"
         )
         .eq("id", numericId)
         .maybeSingle();
@@ -955,6 +944,20 @@ export default function VenueScreen() {
               </View>
             )}
 
+            {/* Ambiance */}
+            {venue.venue_ambiance && venue.venue_ambiance.length > 0 && (
+              <View style={styles.infosSection}>
+                <Text style={styles.infosSectionTitle}>Ambiance</Text>
+                <View style={styles.infosTagsRow}>
+                  {venue.venue_ambiance.map((tag) => (
+                    <View key={tag} style={styles.ambianceTagPill}>
+                      <Text style={styles.ambianceTagPillText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
             {/* Services */}
             {venue.service_tags && venue.service_tags.length > 0 && (
               <View style={styles.infosSection}>
@@ -963,6 +966,34 @@ export default function VenueScreen() {
                   {venue.service_tags.map((tag) => (
                     <View key={tag} style={styles.serviceTagPill}>
                       <Text style={styles.serviceTagPillText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Restauration & boissons */}
+            {venue.food_tags && venue.food_tags.length > 0 && (
+              <View style={styles.infosSection}>
+                <Text style={styles.infosSectionTitle}>Restauration & boissons</Text>
+                <View style={styles.infosTagsRow}>
+                  {venue.food_tags.map((tag) => (
+                    <View key={tag} style={styles.foodTagPill}>
+                      <Text style={styles.foodTagPillText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Paiements & avantages */}
+            {venue.payment_tags && venue.payment_tags.length > 0 && (
+              <View style={styles.infosSection}>
+                <Text style={styles.infosSectionTitle}>Paiements & avantages</Text>
+                <View style={styles.infosTagsRow}>
+                  {venue.payment_tags.map((tag) => (
+                    <View key={tag} style={styles.paymentTagPill}>
+                      <Text style={styles.paymentTagPillText}>{tag}</Text>
                     </View>
                   ))}
                 </View>
@@ -1133,24 +1164,38 @@ export default function VenueScreen() {
             </View>
           </View>
 
-          <Text style={styles.venueDescription} numberOfLines={2} ellipsizeMode="tail">{venue.description?.trim() || venuePitch}</Text>
-
-          {venue.venue_ambiance && venue.venue_ambiance.length > 0 ? (
-            <View style={styles.tagsWrapRow}>
-              {venue.venue_ambiance.map((tag) => (
-                <View key={tag} style={styles.ambianceTagPill}>
-                  <Text style={styles.ambianceTagPillText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
+          <View style={styles.descBlock}>
+            <Text
+              style={styles.venueDescription}
+              numberOfLines={descExpanded ? undefined : 2}
+              ellipsizeMode="tail"
+            >
+              {venue.description?.trim() || venuePitch}
+            </Text>
+            {/* Texte de mesure invisible : detecte si la description depasse 2 lignes (fiable iOS) */}
+            {!descShowToggle && !descExpanded ? (
+              <Text
+                style={[styles.venueDescription, styles.descMeasure]}
+                onTextLayout={(e) => {
+                  if (e.nativeEvent.lines.length > 2) setDescShowToggle(true);
+                }}
+              >
+                {venue.description?.trim() || venuePitch}
+              </Text>
+            ) : null}
+            {descShowToggle ? (
+              <Pressable onPress={() => setDescExpanded((v) => !v)} hitSlop={8} style={styles.seeMoreBtn}>
+                <Text style={styles.seeMoreText}>{descExpanded ? "Voir moins" : "Voir plus"}</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           {/* Actions secondaires — barre segmentée compacte (une seule ligne) */}
           <View style={styles.actionBar}>
             {(() => {
               const items: { key: string; icon: string; label: string; onPress: () => void }[] = [];
               if (venue.address || venue.city) items.push({ key: "dir", icon: "navigate", label: "Itinéraire", onPress: handleDirections });
-              items.push({ key: "hours", icon: "time-outline", label: "Horaires", onPress: () => setInfosModalOpen(true) });
+              items.push({ key: "infos", icon: "information-circle-outline", label: "Infos", onPress: () => setInfosModalOpen(true) });
               if (social) items.push({ key: "social", icon: social.icon, label: social.label, onPress: handleOpenSocial });
               return items.map((it, i) => (
                 <React.Fragment key={it.key}>
@@ -1682,7 +1727,11 @@ const styles = StyleSheet.create({
   hoursLinkText: { fontSize: 13, fontFamily: Font.semiBold, color: Pastel.text, includeFontPadding: false },
   venueName: { fontSize: 30, lineHeight: 34, fontFamily: Font.display, color: Pastel.text, letterSpacing: -0.5, includeFontPadding: false },
   venueCity: { fontSize: 14, color: Pastel.textMuted, fontFamily: Font.medium, includeFontPadding: false },
-  venueDescription: { fontSize: 15, lineHeight: 23, color: Pastel.text, marginBottom: 16, includeFontPadding: false },
+  descBlock: { marginBottom: 16 },
+  venueDescription: { fontSize: 15, lineHeight: 23, color: Pastel.text, includeFontPadding: false },
+  descMeasure: { position: "absolute", left: 0, right: 0, top: 0, opacity: 0 },
+  seeMoreBtn: { alignSelf: "flex-start", marginTop: 4 },
+  seeMoreText: { fontSize: 14, fontWeight: "700", color: Pastel.primary, includeFontPadding: false },
   tagsWrapRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
   typeTagPill: {
     paddingHorizontal: 12,
@@ -1777,6 +1826,24 @@ const styles = StyleSheet.create({
     borderColor: Pastel.border,
   },
   serviceTagPillText: { fontSize: 12, fontFamily: Font.semiBold, color: Pastel.primary, includeFontPadding: false },
+  foodTagPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "#FEF3C7",
+    borderWidth: 1,
+    borderColor: "#FCD34D",
+  },
+  foodTagPillText: { fontSize: 12, fontFamily: Font.semiBold, color: "#B45309", includeFontPadding: false },
+  paymentTagPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: Pastel.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Pastel.border,
+  },
+  paymentTagPillText: { fontSize: 12, fontFamily: Font.semiBold, color: Pastel.textMuted, includeFontPadding: false },
   infosModalCard: { gap: 0 },
   perksPreviewCard: { gap: 0 },
   perksPreviewSubtitle: { fontSize: 14, color: Pastel.textMuted, lineHeight: 20, marginBottom: 16, includeFontPadding: false },

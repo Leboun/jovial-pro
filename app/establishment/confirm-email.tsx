@@ -80,7 +80,6 @@ export default function ConfirmEmailScreen() {
           </View>
           <View>
             <Text style={styles.brandName}>Jovial Pro</Text>
-            <Text style={styles.brandSub}>Espace Partenaire</Text>
           </View>
         </View>
 

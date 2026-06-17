@@ -38,6 +38,11 @@
         "backgroundColor": "#2B4E93"
       },
       "edgeToEdgeEnabled": true,
+      "statusBar": {
+        "backgroundColor": "#F2EDE4",
+        "barStyle": "dark-content",
+        "translucent": true
+      },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -73,7 +78,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/logo_jovial.png",
-          "imageWidth": 200,
+          "imageWidth": 300,
           "resizeMode": "contain",
           "backgroundColor": "#2B4E93",
           "dark": {

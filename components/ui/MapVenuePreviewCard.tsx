@@ -3,6 +3,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensio
 import { Ionicons } from "@expo/vector-icons";
 import { Pastel } from "@/constants/pastel";
 import { Font } from "@/constants/typography";
+import { getActivityEmoji } from "@/utils/activityEmoji";
 
 
 type PreviewVenue = {
@@ -29,32 +30,7 @@ type Props = {
   onToggleFavorite?: () => void;
 };
 
-const ACTIVITY_EMOJIS: Record<string, string> = {
-  fléchettes: "🎯", flechettes: "🎯", darts: "🎯",
-  billard: "🎱", pool: "🎱",
-  babyfoot: "⚽", "baby-foot": "⚽", "baby foot": "⚽",
-  bowling: "🎳",
-  hache: "🪓", "lancer de hache": "🪓",
-  "beer pong": "🏓", beerpong: "🏓",
-  karaoké: "🎤", karaoke: "🎤",
-  quiz: "🎵", "blind test": "🎵",
-  palet: "🥏",
-  échecs: "♟️", echecs: "♟️",
-  poker: "🃏",
-  tennis: "🎾", "ping-pong": "🏓", "tennis de table": "🏓",
-  badminton: "🏸",
-  pétanque: "🥏", petanque: "🥏",
-  jeux: "🎲", "jeux de société": "🎲",
-  escape: "🔐", "escape game": "🔐",
-  paintball: "🎨",
-  laser: "🔫", "laser game": "🔫",
-  vr: "🥽", "réalité virtuelle": "🥽",
-};
-
-function getActivityEmoji(tag: string): string {
-  const key = tag.toLowerCase().trim();
-  return ACTIVITY_EMOJIS[key] ?? "🎮";
-}
+// getActivityEmoji est centralise dans "@/utils/activityEmoji" (importe en haut).
 
 function formatEventDateShort(dateStr: string): string {
   const d = new Date(dateStr);
